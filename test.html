@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="UTF-8"><title>Supabase接続テスト</title></head>
+<body style="font-family:sans-serif;padding:20px;">
+  <h3>Supabase接続テスト</h3>
+  <div>
+    名前: <input id="name" value="テストプレイヤー">
+    <button onclick="doCreate()">部屋を作る</button>
+  </div>
+  <div style="margin-top:10px;">
+    ルームコード: <input id="code">
+    <button onclick="doJoin()">部屋に参加</button>
+  </div>
+  <pre id="log" style="background:#eee;padding:10px;margin-top:20px;white-space:pre-wrap;"></pre>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://oylrrjwwopsqxlvuknth.supabase.co";
+    const ANON_KEY = "sb_publishable_kzJdInyZk2q_xbE6if-4hQ_8zz1L_eH";
+    const supabase = createClient(SUPABASE_URL, ANON_KEY);
+    const log = (obj) => document.getElementById('log').textContent = JSON.stringify(obj, null, 2);
+
+    async function ensureLogin(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) return;
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) log({ login_error: error.message });
+    }
+
+    window.doCreate = async () => {
+      await ensureLogin();
+      const name = document.getElementById('name').value;
+      const { data, error } = await supabase.functions.invoke('create-game', { body: { name, difficulty: 'normal' } });
+      log(error ? { error: error.message } : data);
+      if (data?.room_code) document.getElementById('code').value = data.room_code;
+    };
+
+    window.doJoin = async () => {
+      await ensureLogin();
+      const name = document.getElementById('name').value;
+      const room_code = document.getElementById('code').value;
+      const { data, error } = await supabase.functions.invoke('join-game', { body: { room_code, name } });
+      log(error ? { error: error.message } : data);
+    };
+  </script>
+</body>
+</html>

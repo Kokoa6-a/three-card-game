@@ -143,20 +143,22 @@
     // =========================
 
     window.doJoin = async () => {
-  await ensureLogin();
+  log({ step: "匿名ログイン開始" });
 
-  const name = document.getElementById('name').value;
-  const room_code = document.getElementById('code').value;
+  const { data, error } = await supabase.auth.signInAnonymously();
 
-  const { data, error } = await supabase.functions.invoke(
-    'join-game',
-    {
-      body: {
-        room_code,
-        name
-      }
-    }
-  );
+  if (error) {
+    log({
+      step: "匿名ログインエラー",
+      error: error.message
+    });
+    return;
+  }
 
-  log(error ? { error: error.message } : data);
+  log({
+    step: "匿名ログイン成功",
+    user_id: data.user?.id,
+    has_session: !!data.session,
+    has_access_token: !!data.session?.access_token
+  });
 };

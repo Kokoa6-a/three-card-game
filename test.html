@@ -28,21 +28,25 @@
       if (error) log({ login_error: error.message });
     }
 
-    window.doCreate = async () => {
-      await ensureLogin();
-      const name = document.getElementById('name').value;
-      const { data, error } = await supabase.functions.invoke('create-game', { body: { name, difficulty: 'normal' } });
-      log(error ? { error: error.message } : data);
-      if (data?.room_code) document.getElementById('code').value = data.room_code;
-    };
-
     window.doJoin = async () => {
-  const { data, error } = await supabase.functions.invoke('ping');
+  await ensureLogin();
 
-  log(error ? {
-    error: error.message,
-    name: error.name
-  } : data);
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
+
+  if (sessionError) {
+    log({
+      step: "session_error",
+      message: sessionError.message
+    });
+    return;
+  }
+
+  log({
+    step: "session_check",
+    hasSession: !!sessionData.session,
+    hasAccessToken: !!sessionData.session?.access_token
+  });
 };
   </script>
 </body>

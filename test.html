@@ -1,36 +1,190 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head><meta charset="UTF-8"><title>Supabase接続テスト</title></head>
+<head>
+  <meta charset="UTF-8">
+  <title>Supabase接続テスト</title>
+</head>
+
 <body style="font-family:sans-serif;padding:20px;">
+
   <h3>Supabase接続テスト</h3>
+
   <div>
-    名前: <input id="name" value="テストプレイヤー">
+    名前:
+    <input id="name" value="テストプレイヤー">
     <button onclick="doCreate()">部屋を作る</button>
   </div>
+
   <div style="margin-top:10px;">
-    ルームコード: <input id="code">
+    ルームコード:
+    <input id="code">
     <button onclick="doJoin()">部屋に参加</button>
   </div>
-  <pre id="log" style="background:#eee;padding:10px;margin-top:20px;white-space:pre-wrap;"></pre>
+
+  <pre id="log"
+    style="background:#eee;padding:10px;margin-top:20px;white-space:pre-wrap;"></pre>
+
 
   <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    const SUPABASE_URL = "https://oylrrjwwopsqxlvuknth.supabase.co";
-    const ANON_KEY = "sb_publishable_kzJdInyZk2q_xbE6if-4hQ_8zz1L_eH";
-    const supabase = createClient(SUPABASE_URL, ANON_KEY);
-    const log = (obj) => document.getElementById('log').textContent = JSON.stringify(obj, null, 2);
+    import { createClient }
+      from "https://esm.sh/@supabase/supabase-js@2";
 
-    async function ensureLogin(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) return;
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) log({ login_error: error.message });
+
+    // =========================
+    // Supabase設定
+    // =========================
+
+    const SUPABASE_URL =
+      "https://oylrrjwwopsqxlvuknth.supabase.co";
+
+    const ANON_KEY =
+      "sb_publishable_kzJdInyZk2q_xbE6if-4hQ_8zz1L_eH";
+
+
+    const supabase =
+      createClient(SUPABASE_URL, ANON_KEY);
+
+
+    // =========================
+    // ログ表示
+    // =========================
+
+    const log = (obj) => {
+      document.getElementById("log").textContent =
+        JSON.stringify(obj, null, 2);
+    };
+
+
+    // =========================
+    // 匿名ログイン
+    // =========================
+
+    async function ensureLogin() {
+
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        return true;
+      }
+
+      const { error } =
+        await supabase.auth.signInAnonymously();
+
+      if (error) {
+        log({
+          step: "匿名ログイン失敗",
+          error: error.message
+        });
+
+        return false;
+      }
+
+      return true;
     }
 
+
+    // =========================
+    // 部屋を作る
+    // =========================
+
+    window.doCreate = async () => {
+
+      const loggedIn = await ensureLogin();
+
+      if (!loggedIn) return;
+
+
+      const name =
+        document.getElementById("name").value;
+
+
+      const { data, error } =
+        await supabase.functions.invoke(
+          "create-game",
+          {
+            body: {
+              name: name,
+              difficulty: "normal"
+            }
+          }
+        );
+
+
+      if (error) {
+
+        log({
+          step: "create-gameエラー",
+          error: error.message,
+          name: error.name
+        });
+
+        return;
+      }
+
+
+      log(data);
+
+
+      if (data?.room_code) {
+
+        document.getElementById("code").value =
+          data.room_code;
+
+      }
+
+    };
+
+
+    // =========================
+    // 部屋に参加
+    // =========================
+
     window.doJoin = async () => {
-  log({ step: "ボタンは押せた" });
-};
+
+      const loggedIn = await ensureLogin();
+
+      if (!loggedIn) return;
+
+
+      const name =
+        document.getElementById("name").value;
+
+      const room_code =
+        document.getElementById("code").value;
+
+
+      const { data, error } =
+        await supabase.functions.invoke(
+          "rapid-endpoint",
+          {
+            body: {
+              room_code: room_code,
+              name: name
+            }
+          }
+        );
+
+
+      if (error) {
+
+        log({
+          step: "join-gameエラー",
+          error: error.message,
+          name: error.name
+        });
+
+        return;
+      }
+
+
+      log(data);
+
+    };
+
   </script>
+
 </body>
 </html>

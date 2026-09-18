@@ -37,12 +37,13 @@
     };
 
     window.doJoin = async () => {
-      await ensureLogin();
-      const name = document.getElementById('name').value;
-      const room_code = document.getElementById('code').value;
-      const { data, error } = await supabase.functions.invoke('join-game', { body: { room_code, name } });
-      log(error ? { error: error.message } : data);
-    };
+  const { data, error } = await supabase.functions.invoke('ping');
+
+  log(error ? {
+    error: error.message,
+    name: error.name
+  } : data);
+};
   </script>
 </body>
 </html>

@@ -143,26 +143,84 @@
     // =========================
 
     window.doJoin = async () => {
+
   log({ step: "匿名ログイン開始" });
 
-  const { data, error } = await supabase.auth.signInAnonymously();
+  const { data: loginData, error: loginError } =
+    await supabase.auth.signInAnonymously();
 
-  if (error) {
+  if (loginError) {
     log({
       step: "匿名ログインエラー",
-      error: error.message
+      error: loginError.message
     });
     return;
   }
 
   log({
     step: "匿名ログイン成功",
-    user_id: data.user?.id,
-    has_session: !!data.session,
-    has_access_token: !!data.session?.access_token
+    user_id: loginData.user?.id,
+    has_session: !!loginData.session,
+    has_access_token: !!loginData.session?.access_token
   });
+
+
+  // -------------------------
+  // ルームコード取得
+  // -------------------------
+
+  const roomCode =
+    document.getElementById("code").value.trim();
+
+  if (!roomCode) {
+    log({
+      step: "ルームコードが空です"
+    });
+    return;
+  }
+
+
+  // -------------------------
+  // join-game
+  // -------------------------
+
+  log({
+    step: "join-game呼び出し開始",
+    room_code: roomCode
+  });
+
+  const { data, error } =
+    await supabase.functions.invoke(
+      "join-game",
+      {
+        body: {
+          room_code: roomCode,
+          name: document.getElementById("name").value
+        }
+      }
+    );
+
+
+  if (error) {
+
+    log({
+      step: "join-gameエラー",
+      error: error.message,
+      name: error.name
+    });
+
+    return;
+  }
+
+
+  log({
+    step: "join-game成功",
+    data: data
+  });
+
 };
-</script>
+  </script>
 
 </body>
+
 </html>

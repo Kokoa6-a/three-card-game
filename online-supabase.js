@@ -7,7 +7,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  
 const SUPABASE_URL = "https://oylrrjwwopsqxlvuknth.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_PUBLISHABLE_ANON_KEY_HERE"; // ← Project Settings > Data API の anon/publishable key に置き換えてください
+const SUPABASE_ANON_KEY = "sb_publishable_kzJdInyZk2q_xbE6if-4hQ_8zz1L_eH"; // ← Project Settings > Data API の anon/publishable key に置き換えてください
  
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  

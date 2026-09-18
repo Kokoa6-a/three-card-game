@@ -29,24 +29,7 @@
     }
 
     window.doJoin = async () => {
-  await ensureLogin();
-
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.getSession();
-
-  if (sessionError) {
-    log({
-      step: "session_error",
-      message: sessionError.message
-    });
-    return;
-  }
-
-  log({
-    step: "session_check",
-    hasSession: !!sessionData.session,
-    hasAccessToken: !!sessionData.session?.access_token
-  });
+  log({ step: "ボタンは押せた" });
 };
   </script>
 </body>

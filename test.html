@@ -143,48 +143,20 @@
     // =========================
 
     window.doJoin = async () => {
+  await ensureLogin();
 
-      const loggedIn = await ensureLogin();
+  const name = document.getElementById('name').value;
+  const room_code = document.getElementById('code').value;
 
-      if (!loggedIn) return;
-
-
-      const name =
-        document.getElementById("name").value;
-
-      const room_code =
-        document.getElementById("code").value;
-
-
-      const { data, error } =
-        await supabase.functions.invoke(
-          "rapid-endpoint",
-          {
-            body: {
-              room_code: room_code,
-              name: name
-            }
-          }
-        );
-
-
-      if (error) {
-
-        log({
-          step: "join-gameエラー",
-          error: error.message,
-          name: error.name
-        });
-
-        return;
+  const { data, error } = await supabase.functions.invoke(
+    'join-game',
+    {
+      body: {
+        room_code,
+        name
       }
+    }
+  );
 
-
-      log(data);
-
-    };
-
-  </script>
-
-</body>
-</html>
+  log(error ? { error: error.message } : data);
+};

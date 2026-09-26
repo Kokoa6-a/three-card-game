@@ -1,0 +1,3188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三色ゲーム — 2人用カードゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14151a;
+    --bg-panel: #1c1d24;
+    --bg-panel-2: #22232b;
+    --line: #34353f;
+    --ink: #ece9e2;
+    --ink-dim: #9a9aa4;
+    --black-c: #2a2b31;
+    --black-c-line: #55565f;
+    --silver-c: #c7ccd3;
+    --gold-c: #d7a83c;
+    --accent: #b1443f;
+    --accent-2: #3f7d6e;
+    --radius: 10px;
+    font-size: 16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(circle at 50% -10%, #23242c 0%, #14151a 55%, #0f0f13 100%);
+    color: var(--ink);
+    font-family: "Noto Sans JP", sans-serif;
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,.serif{ font-family: "Shippori Mincho", serif; }
+  #app{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+    min-height: 100vh;
+  }
+  .top-title{
+    text-align:center;
+    margin: 6px 0 22px;
+  }
+  .top-title h1{
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    margin: 0 0 4px;
+    background: linear-gradient(120deg,#e7e2d4,#d7a83c 55%,#e7e2d4);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .top-title p{
+    margin:0;
+    color: var(--ink-dim);
+    font-size: .82rem;
+    letter-spacing:.12em;
+  }
+
+  .panel{
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    margin-bottom: 16px;
+  }
+  .panel-tight{ padding: 16px 18px; }
+
+  .scoreboard{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size:.88rem;
+  }
+  .scoreboard .who{ text-align:center; flex:1; }
+  .scoreboard .who .name{ color:var(--ink-dim); font-size:.74rem; letter-spacing:.06em;}
+  .scoreboard .who .pts{ font-family:"Shippori Mincho",serif; font-size:1.5rem; font-weight:800; }
+  .scoreboard .mid{ text-align:center; color:var(--ink-dim); font-size:.74rem; min-width:74px;}
+  .scoreboard .mid-sub{ margin-top:4px; font-size:.72rem; color:var(--gold-c); font-weight:700;}
+  .scoreboard .jokers{ font-size:.76rem; color:var(--ink-dim); margin-top:2px;}
+
+  h2.section-title{
+    font-size:1.15rem;
+    margin: 0 0 14px;
+    font-weight:700;
+    letter-spacing:.03em;
+  }
+  p.lead{ color: var(--ink-dim); font-size:.92rem; margin: -6px 0 16px;}
+
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  button{
+    font-family:"Noto Sans JP",sans-serif;
+    font-size: .92rem;
+    padding: 11px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg-panel-2);
+    color: var(--ink);
+    cursor:pointer;
+    transition: background .15s, border-color .15s, transform .05s;
+  }
+  button:hover{ border-color:#565764; background:#282932; }
+  button:active{ transform: scale(.98); }
+  button.primary{
+    background: linear-gradient(135deg,#c6923f,#9c6f26);
+    border-color:#c6923f;
+    color:#1a1408;
+    font-weight:700;
+  }
+  button.primary:hover{ filter:brightness(1.08); }
+  button.ghost{ background:transparent; }
+  button:disabled{ opacity:.35; cursor:not-allowed; }
+  button.small{ padding:7px 12px; font-size:.8rem; }
+  button.selected{ outline: 2px solid var(--gold-c); }
+
+  input[type=text]{
+    font-family:"Noto Sans JP",sans-serif;
+    background: var(--bg-panel-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:8px;
+    padding:9px 12px;
+    font-size:.92rem;
+    width:100%;
+  }
+  label.field-label{ display:block; font-size:.8rem; color:var(--ink-dim); margin: 14px 0 6px; }
+
+  .choice-grid{ display:flex; gap:10px; flex-wrap:wrap; }
+  .choice-grid button{ flex:1; min-width:90px; }
+
+  /* Cards */
+  .card{
+    width: 56px; height: 78px;
+    border-radius: 7px;
+    display:inline-flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family:"Shippori Mincho",serif;
+    font-weight:700;
+    position:relative;
+    box-shadow: 0 3px 8px rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.08);
+    user-select:none;
+    flex-shrink:0;
+  }
+  .card .num{ font-size:1.5rem; line-height:1;}
+  .card .lbl{ font-size:.6rem; margin-top:3px; letter-spacing:.05em; opacity:.85;}
+  .card.color-black{ background:linear-gradient(160deg,#33343c,#1c1d22); color:#e7e5df; border-color:#55565f;}
+  .card.color-silver{ background:linear-gradient(160deg,#e5e9ee,#b7bcc4); color:#20232a;}
+  .card.color-gold{ background:linear-gradient(160deg,#eec868,#b5852a); color:#2b1f04;}
+  .card.face-down{ background:repeating-linear-gradient(45deg,#2a2b33,#2a2b33 6px,#232329 6px,#232329 12px); color:transparent; border-color:#3c3d47;}
+  .card.small{ width:42px; height:58px; }
+  .card.small .num{ font-size:1.1rem; }
+  .card.small .lbl{ font-size:.52rem; }
+  .card.clickable{ cursor:pointer; transition: transform .1s; }
+  .card.clickable:hover{ transform: translateY(-4px); }
+  .card.picked{ outline:2px solid var(--accent-2); transform: translateY(-6px);}
+  .card.six-badge::after{
+    content:"⟲"; position:absolute; top:2px; right:3px; font-size:.6rem; opacity:.75;
+  }
+
+  .hand-row{ display:flex; gap:10px; flex-wrap:wrap; margin: 10px 0 4px; }
+  .field-row{ display:flex; gap:16px; justify-content:center; margin: 6px 0 12px; }
+  .field-item{ text-align:center; }
+  .field-item .cap{ font-size:.72rem; color:var(--ink-dim); margin-bottom:5px; }
+
+  .pile-cols{ display:flex; gap:10px; margin-top:6px; }
+  .pile-col{
+    flex:1;
+    background: var(--bg-panel-2);
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:12px 8px 10px;
+    min-height: 190px;
+    display:flex;
+    flex-direction:column;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .pile-col.c-black{ border-color: var(--black-c-line); }
+  .pile-col.c-silver{ border-color: #8b8f98; }
+  .pile-col.c-gold{ border-color: #a8802f; }
+  .pile-col h4{ margin:0 0 4px; text-align:center; font-size:.82rem; font-weight:700; letter-spacing:.04em;}
+  .pile-col .opp-info{ text-align:center; font-size:.68rem; color:var(--ink-dim); min-height:16px; margin-bottom:8px; }
+  .pile-col .opp-info .badge{ padding:2px 7px; font-size:.66rem; margin:1px 2px;}
+  .pile-col .cards-here{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-content:flex-start; flex:1; min-height:64px;}
+  .pile-col.selectable{ cursor:pointer; }
+  .pile-col.selectable:hover{ background:#282a34; }
+  .pile-col.target-hint{ border-color: var(--accent); box-shadow: 0 0 0 2px rgba(177,68,63,.25) inset; }
+  .pile-col .drop-label{ text-align:center; font-size:.72rem; color: var(--accent); margin-top:8px; font-weight:700; opacity:0; height:16px; }
+  .pile-col.target-hint .drop-label{ opacity:1; }
+  .hand-color-summary{ display:flex; justify-content:center; gap:8px; margin: 4px 0 2px; flex-wrap:wrap; }
+  .hand-color-summary .chip{ font-size:.7rem; padding:2px 9px; border-radius:999px; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--ink-dim);}
+
+  .badge{
+    display:inline-block;
+    font-size:.72rem;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--bg-panel-2);
+    border:1px solid var(--line);
+    color: var(--ink-dim);
+    margin: 2px 4px 2px 0;
+  }
+  .badge.gold{ border-color:#a0782a; color:#e9c473; }
+
+  .cover{
+    text-align:center;
+    padding: 46px 18px;
+  }
+  .cover .icon{ font-size:2.4rem; margin-bottom:14px; }
+  .cover h3{ margin:0 0 8px; font-size:1.2rem; }
+  .cover p{ color:var(--ink-dim); font-size:.86rem; margin:0 0 22px; }
+
+  .notice{
+    background: rgba(177,68,63,.12);
+    border:1px solid rgba(177,68,63,.4);
+    color:#e2a09c;
+    padding:10px 14px;
+    border-radius:8px;
+    font-size:.84rem;
+    margin: 10px 0;
+  }
+  .notice.info{
+    background: rgba(63,125,110,.12);
+    border-color: rgba(63,125,110,.45);
+    color:#8fc9ba;
+  }
+
+  table.calc{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.82rem;
+    margin-top:10px;
+  }
+  table.calc th, table.calc td{
+    border-bottom:1px solid var(--line);
+    padding: 7px 6px;
+    text-align:left;
+  }
+  table.calc th{ color:var(--ink-dim); font-weight:600; font-size:.74rem; }
+  .win-row{ background: rgba(215,168,60,.08); }
+
+  .pile-result{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 14px 8px;
+    margin-bottom:14px;
+    background:var(--bg-panel-2);
+  }
+  .pile-result h4{ margin:0 0 4px; font-size:1rem; display:flex; align-items:center; gap:8px;}
+  .pile-result .winner-line{ font-size:.88rem; margin: 8px 0 2px; }
+  .divider{ height:1px; background:var(--line); margin: 18px 0; border:none;}
+  .center{ text-align:center; }
+  .flexcol{ display:flex; flex-direction:column; gap:8px; }
+  .row-between{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;}
+  .footer-note{ text-align:center; color:var(--ink-dim); font-size:.72rem; margin-top:26px; }
+  .help-fab{
+    position: fixed;
+    right: 18px;
+    bottom: max(18px, env(safe-area-inset-bottom, 0px));
+    width: 46px; height: 46px;
+    border-radius: 999px;
+    background: linear-gradient(135deg,#c6923f,#9c6f26);
+    color:#1a1408;
+    border: 1px solid #c6923f;
+    font-weight:800;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,.4);
+    z-index: 50;
+    cursor: pointer;
+  }
+  .rules-section{ margin-bottom: 22px; }
+  .rules-section h3{ font-size: 1.02rem; margin: 0 0 8px; font-family:"Shippori Mincho",serif; }
+  .rules-section p{ margin: 0 0 8px; font-size: .88rem; color: var(--ink); line-height:1.7; }
+  .rules-section ol, .rules-section ul{ margin: 4px 0 8px 1.2em; padding:0; font-size:.88rem; line-height:1.8; }
+  .rules-section li{ margin-bottom: 2px; }
+  .rules-example{
+    background: var(--bg-panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: .82rem;
+    color: var(--ink-dim);
+    margin: 6px 0 10px;
+  }
+  table.rules-table{ width:100%; border-collapse:collapse; font-size:.8rem; margin: 6px 0 10px; }
+  table.rules-table th, table.rules-table td{ border:1px solid var(--line); padding:6px 5px; text-align:center; }
+  table.rules-table th{ background:var(--bg-panel-2); color:var(--ink-dim); font-weight:600; font-size:.72rem; }
+  table.rules-table td:first-child, table.rules-table th:first-child{ text-align:left; }
+  .tag-select{ display:flex; gap:8px; flex-wrap:wrap; }
+  .helpbox{ font-size:.78rem; color:var(--ink-dim); background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:12px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================= 定数 ============================= */
+const COLORS = ["black","silver","gold"];
+const COLOR_LABEL = {black:"黒", silver:"銀", gold:"金"};
+const COLOR_LABEL_LONG = {black:"黒の山", silver:"銀の山", gold:"金の山"};
+const COLOR_MOD_MAP = {0:"gold", 1:"black", 2:"silver"}; // sum mod 3 -> double color
+
+/* ============================= 状態 ============================= */
+let S = null;
+
+function freshState(){
+  return {
+    stage: "SETUP",            // SETUP | GAME | RESULT
+    mode: "local",             // 'local' | 'online' — SETUP画面のタブ切り替え用
+    showRules: false,          // ゲーム説明（ルール）画面をオーバーレイ表示するかどうか
+    difficulty: "normal",
+    names: {1:"プレイヤー1", 2:"プレイヤー2"},
+    firstPlayer: 1,
+    scores: {1:0, 2:0},
+    jokersLeft: {1:2, 2:2},
+    round: 0,
+    phase: null,
+    pendingPlayer: null,
+    revealed: false,
+
+    // オンライン対戦の部屋作成・参加用の状態（部屋作成〜初期配札まで）
+    online: {
+      view: "choice",     // choice | create_form | waiting | join_form | matched | online_game
+      name: "",
+      difficulty: "normal",
+      roomCodeInput: "",
+      gameId: null,
+      roomCode: null,
+      role: null,          // 1=部屋を作った側 / 2=参加した側
+      status: null,         // games.status の値
+      myName: null,
+      opponentName: null,
+      error: null,
+      busy: false,
+      myReady: false,
+      opponentReady: false,
+      startTriggered: false,
+      phase: null,          // games.phase（サーバーで配札されるとROUND_INTROになる）
+      round: 0,
+      firstPlayer: null,
+      doubleColor: null,
+      doubleDrawCards: null,
+      myHand: [],
+      exchangeSubmitted: false,
+      exchangeSelectedCardId: null,
+      exchangeResult: null,
+      myReceivedCardId: null,
+      discardSelectedCardId: null,
+      myDrawnCard: null,
+      myDrawnColor: null,
+      jokersLeft: null,
+      jokerUsed: null,
+      jokerDecided: false,
+      myJokerPeek: null,
+      betColorCounts: null,
+      myBets: {black:[], silver:[], gold:[]},
+      placementSelectedCard: null,
+      placementSubmitted: false,
+      fieldCards: null,
+      lastResult: null,
+      scores: null,
+      winner: null,
+      tieBreakApplied: false,
+      _resetRound: null
+    },
+
+    piles: {black:[], silver:[], gold:[]},
+    doubleColor: null,
+    doubleDrawCards: {black:null, silver:null, gold:null},
+    fieldCards: {black:null, silver:null, gold:null},
+
+    hands: {1:[], 2:[]},
+    jokerUsed: {1:false, 2:false},
+    jokerPeek: {1:null, 2:null},
+
+    exchangeChoice: {1:null, 2:null},
+    exchangeResult: null,
+    receivedCardId: {1:null, 2:null},
+    discarded: {1:null, 2:null},
+    drawnCard: {1:null, 2:null},
+    drawnColor: {1:null, 2:null},
+
+
+    tempSelectedCard: null,
+    bets: {1:{black:[],silver:[],gold:[]}, 2:{black:[],silver:[],gold:[]}},
+
+    // スーパーハード専用：3・6の相殺/反射、実効数字の一時状態
+    effectiveCards: null,
+    threeSixResolution: null,
+    threeTargetQueue: [],
+    threeTargetIndex: 0,
+    threeTargetSelectedCard: null,
+
+    lastResult: null,
+    winner: null,
+    tieBreakApplied: false
+  };
+}
+
+function other(p){ return p===1?2:1; }
+
+/* ============================= ユーティリティ ============================= */
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+function makeColorPile(color){
+  const arr = [];
+  for(let n=0;n<=11;n++) arr.push({id:color+"-"+n, color, number:n});
+  return shuffle(arr);
+}
+function findCard(hand, id){ return hand.find(c=>c.id===id); }
+function handColorCounts(hand){
+  const counts = {black:0, silver:0, gold:0};
+  hand.forEach(c=>{ counts[c.color] += 1; });
+  return counts;
+}
+function colorCountsLabel(counts){
+  return COLORS.map(c=> COLOR_LABEL[c]+counts[c]).join(" ");
+}
+function betColorCounts(player, pile){
+  const counts = {black:0, silver:0, gold:0};
+  S.bets[player][pile].forEach(id=>{
+    const card = findCard(S.hands[player], id);
+    if(card) counts[card.color] += 1;
+  });
+  return counts;
+}
+function removeCard(hand, id){
+  const idx = hand.findIndex(c=>c.id===id);
+  if(idx>=0) return hand.splice(idx,1)[0];
+  return null;
+}
+function cardEl(card, opts){
+  opts = opts||{};
+  const size = opts.small ? " small" : "";
+  const clickable = opts.onClick ? " clickable" : "";
+  const picked = opts.picked ? " picked" : "";
+  const six = (card.number===6 && S.difficulty==="hard") ? " six-badge" : "";
+  const div = document.createElement("div");
+  div.className = "card color-"+card.color+size+clickable+picked+six;
+  div.innerHTML = '<div class="num">'+card.number+'</div><div class="lbl">'+COLOR_LABEL[card.color]+'</div>';
+  if(opts.onClick) div.addEventListener("click", opts.onClick);
+  return div;
+}
+function faceDownEl(small){
+  const div = document.createElement("div");
+  div.className = "card face-down"+(small?" small":"");
+  div.innerHTML = '<div class="num">?</div>';
+  return div;
+}
+
+/* ============================= レンダリング基盤 ============================= */
+const app = document.getElementById("app");
+
+function render(){
+  app.innerHTML = "";
+  const title = document.createElement("div");
+  title.className = "top-title";
+  title.innerHTML = '<h1>三色ゲーム</h1><p>黒・銀・金 — 三つの山を賭ける読み合いカードゲーム</p>';
+  app.appendChild(title);
+
+  if(S.showRules){ renderRulesScreen(); return; }
+
+  if(S.stage === "SETUP"){ renderSetup(); appendHelpButton(); return; }
+  if(S.stage === "RESULT"){ renderScoreboard(); renderResult(); appendHelpButton(); return; }
+
+  renderScoreboard();
+
+  switch(S.phase){
+    case "ROUND_INTRO": renderRoundIntro(); break;
+    case "DOUBLE_REVEAL": renderDoubleReveal(); break;
+    case "JOKER_DECISION": renderJokerDecision(); break;
+    case "JOKER_ANNOUNCE": renderJokerAnnounce(); break;
+    case "EXCHANGE_SELECT": renderExchangeSelect(); break;
+    case "EXCHANGE_REVEAL": renderExchangeReveal(); break;
+    case "DISCARD": renderDiscard(); break;
+    case "DRAW_CHOICE": renderDrawChoice(); break;
+    case "PLACEMENT": renderPlacement(); break;
+    case "PLACEMENT_ANNOUNCE": renderPlacementAnnounce(); break;
+    case "FIELD_REVEAL": renderFieldReveal(); break;
+    case "THREE_SIX_RESOLVE": renderThreeSixResolve(); break;
+    case "THREE_TARGET_SELECT": renderThreeTargetSelect(); break;
+    case "SCORING": renderScoring(); break;
+    default: break;
+  }
+  appendHelpButton();
+}
+
+function appendHelpButton(){
+  const btn = document.createElement("button");
+  btn.className = "help-fab";
+  btn.textContent = "？";
+  btn.title = "ゲーム説明を見る";
+  btn.addEventListener("click", ()=>{ S.showRules = true; render(); });
+  app.appendChild(btn);
+}
+
+function renderRulesScreen(){
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">ゲーム説明</h2>';
+
+  const sections = [];
+
+  sections.push({
+    h: "1. ゲームの目的",
+    body: `
+      <p>2人で対戦するカードゲームです。</p>
+      <p>毎ラウンド、手札のカードを「黒」「銀」「金」の3つの場に配置し、それぞれの場の勝敗で得点（ポイント）を競います。</p>
+      <p>合計ポイントが規定点に先に到達したプレイヤーの勝利です。</p>
+    `
+  });
+
+  sections.push({
+    h: "2. 1ラウンドの流れ",
+    body: `
+      <ol>
+        <li>ラウンド開始（山札をリセット）</li>
+        <li>2倍色の公開（黒・銀・金から1枚ずつ引いて決定）</li>
+        <li>カード交換（お互い1枚を伏せて選び、同時に公開して交換）</li>
+        <li>カードを1枚捨てる（交換で受け取ったカードは捨てられません）</li>
+        <li>カードを1枚引く（黒・銀・金、好きな山から）</li>
+        <li>ジョーカーを使うか決める</li>
+        <li>手札6枚を黒・銀・金の3つの場に配置</li>
+        <li>場の数字を公開</li>
+        <li>得点計算</li>
+        <li>規定点に届いていなければ、次のラウンドへ</li>
+      </ol>
+    `
+  });
+
+  sections.push({
+    h: "3. カードの得点ルール",
+    body: `
+      <p><b>色当て</b>：カードの色と、置いた場の色が同じなら、そのカードの数字は常に×2になります（難易度に関係なく発動）。</p>
+      <p><b>数字一致</b>：カードの数字と、場の数字が同じなら×3になります。</p>
+      <p><b>差6</b>：ノーマル・ハードでは、場の数字との差がちょうど6でも数字一致と同じ扱いで×3になります（イージーにはこのルールはありません）。</p>
+      <p>色当てと数字一致／差6は重複します（両方成立すると×2×3＝×6）。</p>
+      <div class="rules-example">例：黒が2倍色、場の数字が1のとき、黒の場に「黒2」「黒9」「銀10」を置いた場合<br>
+      黒2 → 2×2(色当て)＝4　／　黒9 → 9×2(色当て)＝18　／　銀10 → 10（色が違うので色当てなし）<br>
+      合計 32 でこの場を獲得→ 獲得ポイントは 場の数字1×2(2倍色)＝<b>2ポイント</b></div>
+      <p><b>2倍色</b>：そのラウンドで選ばれた色の場を獲得すると、獲得できるポイント（場の数字）が×2になります（得点の計算式そのものではなく、勝った後のポイントに影響します）。</p>
+      <p><b>0のボーナス</b>：ノーマル・ハードでは、勝った場に「0」のカードを置いていた場合、獲得ポイントがさらに×2になります（イージーにはありません）。</p>
+      <p><b>「6」の特殊効果（ハードのみ）</b>：6のカードを1つの場に置くと、実際に置いたカードは1枚のままですが、残り2つの場でも「場の数字との一致／差6」の判定を受けます（この波及分には色当てのボーナスはつきません）。</p>
+    `
+  });
+
+  sections.push({
+    h: "4. ジョーカー",
+    body: `
+      <p>ゲーム全体で2枚持っており、<b>1ラウンドにつき最大1回</b>まで使えます。</p>
+      <p>使うと、まだ公開されていない「場の数字」を覗くことができます。</p>
+      <ul>
+        <li>イージー・ノーマル：黒・銀・金のうち<b>1つだけ</b>選んで覗けます</li>
+        <li>ハード：黒・銀・金<b>3つすべて</b>を一度に覗けます</li>
+      </ul>
+      <p>もちろん使わない選択もできます（温存して後のラウンドで使えます）。「誰が使ったか」は相手にも公開されますが、覗いた中身は非公開のままです。</p>
+    `
+  });
+
+  sections.push({
+    h: "5. 難易度の違い",
+    body: `
+      <table class="rules-table">
+        <tr><th></th><th>イージー</th><th>ノーマル</th><th>ハード</th></tr>
+        <tr><td>数字一致 ×3</td><td>○</td><td>○</td><td>○</td></tr>
+        <tr><td>差6 ×3</td><td>—</td><td>○</td><td>○</td></tr>
+        <tr><td>0のボーナス</td><td>—</td><td>○</td><td>○</td></tr>
+        <tr><td>6の特殊効果</td><td>—</td><td>—</td><td>○</td></tr>
+        <tr><td>ジョーカーで見える場</td><td>1つ</td><td>1つ</td><td>3つ</td></tr>
+        <tr><td>終了ポイント</td><td>50</td><td>100</td><td>100</td></tr>
+      </table>
+      <p>色当て（カード色＝場の色で×2）はすべての難易度で共通です。</p>
+    `
+  });
+
+  sections.push({
+    h: "6. 勝利条件",
+    body: `
+      <p>合計ポイントが規定点（イージー50ポイント／ノーマル・ハード100ポイント）に先に到達したプレイヤーの勝利です。</p>
+      <p>同じラウンドで両者が規定点に到達し、かつ同点だった場合は、そのラウンドで<b>先手だったプレイヤー</b>の勝利になります。</p>
+      <p>2ラウンド目以降の先手は、それまでの合計ポイントが高い方が務めます（同点の場合はランダムです）。</p>
+    `
+  });
+
+  sections.forEach(sec=>{
+    const div = document.createElement("div");
+    div.className = "rules-section";
+    div.innerHTML = '<h3>'+sec.h+'</h3>'+sec.body;
+    panel.appendChild(div);
+  });
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "primary";
+  closeBtn.textContent = "閉じる";
+  closeBtn.addEventListener("click", ()=>{ S.showRules = false; render(); });
+  btnrow.appendChild(closeBtn);
+  app.appendChild(btnrow);
+}
+
+function renderScoreboard(){
+  const sb = document.createElement("div");
+  sb.className = "scoreboard";
+  const handLine = (p)=>{
+    if(!S.hands[p] || S.hands[p].length===0) return "";
+    return '<div class="jokers">手札の色: '+colorCountsLabel(handColorCounts(S.hands[p]))+'</div>';
+  };
+  const doubleColorLine = S.doubleColor
+    ? '<div class="mid-sub">✦2倍色: '+COLOR_LABEL[S.doubleColor]+'</div>'
+    : "";
+  sb.innerHTML =
+    '<div class="who"><div class="name">'+S.names[1]+(S.firstPlayer===1?" (先攻)":"")+'</div><div class="pts">'+S.scores[1]+'</div><div class="jokers">🃏 残り '+S.jokersLeft[1]+'</div>'+handLine(1)+'</div>'+
+    '<div class="mid">第 '+S.round+' ラウンド<br>難易度: '+diffLabel(S.difficulty)+doubleColorLine+'</div>'+
+    '<div class="who"><div class="name">'+S.names[2]+(S.firstPlayer===2?" (先攻)":"")+'</div><div class="pts">'+S.scores[2]+'</div><div class="jokers">🃏 残り '+S.jokersLeft[2]+'</div>'+handLine(2)+'</div>';
+  app.appendChild(sb);
+}
+
+function diffLabel(d){ return d==="easy"?"イージー":d==="hard"?"ハード":d==="super_hard"?"スーパーハード":"ノーマル"; }
+function winThreshold(){ return S.difficulty === "easy" ? 50 : 100; }
+
+/* 汎用: プライベート画面のカバー */
+function renderPrivateCover(player, onReveal, subtitle){
+  const panel = document.createElement("div");
+  panel.className = "panel cover";
+  panel.innerHTML =
+    '<div class="icon">🂠</div>'+
+    '<h3>'+S.names[player]+' の番です</h3>'+
+    '<p>'+(subtitle||'画面を他のプレイヤーに見られないようにしてください。準備ができたらタップして内容を表示します。')+'</p>';
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "タップして表示する";
+  btn.addEventListener("click", onReveal);
+  panel.appendChild(btn);
+  app.appendChild(panel);
+}
+
+function jokerReminderBox(player){
+  const peek = S.jokerPeek[player];
+  if(!peek) return null;
+  const div = document.createElement("div");
+  div.className = "notice info";
+  if(peek.mode==="single"){
+    div.textContent = "🃏 あなたが確認した場の数字 — "+COLOR_LABEL_LONG[peek.color]+": "+peek.value;
+  } else {
+    div.textContent = "🃏 あなたが確認した場の数字 — 黒: "+peek.values.black+" / 銀: "+peek.values.silver+" / 金: "+peek.values.gold;
+  }
+  return div;
+}
+
+/* ============================= SETUP ============================= */
+function renderSetup(){
+  const tabs = document.createElement("div");
+  tabs.className = "choice-grid";
+  tabs.style.marginBottom = "14px";
+  [["local","この端末で2人プレイ"],["online","オンライン対戦"]].forEach(([val,label])=>{
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.className = (S.mode===val ? "selected":"");
+    b.addEventListener("click", ()=>{ S.mode = val; render(); });
+    tabs.appendChild(b);
+  });
+  app.appendChild(tabs);
+
+  const rulesRow = document.createElement("div");
+  rulesRow.style.textAlign = "center";
+  rulesRow.style.marginBottom = "14px";
+  const rulesBtn = document.createElement("button");
+  rulesBtn.className = "ghost";
+  rulesBtn.textContent = "📖 遊び方・ゲーム説明";
+  rulesBtn.addEventListener("click", ()=>{ S.showRules = true; render(); });
+  rulesRow.appendChild(rulesBtn);
+  app.appendChild(rulesRow);
+
+  if(S.mode === "online"){ renderOnlineSetup(); return; }
+
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">ゲームの準備</h2><p class="lead">2人で1つの端末を回して遊ぶ「回し打ち」形式です。自分の番以外の情報は画面をのぞかないようにしましょう。</p>';
+
+  // 名前
+  const label1 = document.createElement("label");
+  label1.className = "field-label";
+  label1.textContent = "プレイヤー1の名前";
+  const input1 = document.createElement("input");
+  input1.type = "text"; input1.value = S.names[1]; input1.maxLength = 12;
+  const label2 = document.createElement("label");
+  label2.className = "field-label";
+  label2.textContent = "プレイヤー2の名前";
+  const input2 = document.createElement("input");
+  input2.type = "text"; input2.value = S.names[2]; input2.maxLength = 12;
+
+  panel.appendChild(label1); panel.appendChild(input1);
+  panel.appendChild(label2); panel.appendChild(input2);
+
+  // 難易度
+  const diffLabelEl = document.createElement("label");
+  diffLabelEl.className = "field-label";
+  diffLabelEl.textContent = "難易度";
+  panel.appendChild(diffLabelEl);
+  const diffGrid = document.createElement("div");
+  diffGrid.className = "choice-grid";
+  [["easy","イージー"],["normal","ノーマル"],["hard","ハード"],["super_hard","スーパーハード"]].forEach(([val,label])=>{
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.className = (S.difficulty===val ? "selected":"");
+    b.addEventListener("click", ()=>{ S.difficulty = val; render(); });
+    diffGrid.appendChild(b);
+  });
+  panel.appendChild(diffGrid);
+
+  const help = document.createElement("div");
+  help.className = "helpbox";
+  help.innerHTML =
+    "イージー：数字一致のみ ×3。ジョーカーは山1つだけ確認。終了は50点。<br>"+
+    "ノーマル：上記＋差6も×3、0の山を取ると2倍。ジョーカーは山1つだけ確認。終了は100点。<br>"+
+    "ハード：上記すべて＋6は3つの山すべてに同時にかかる特殊効果あり。ジョーカーで3山すべて確認。終了は100点。<br>"+
+    "スーパーハード：上記すべて＋3と9に特殊効果あり。ジョーカーで3山すべて確認。終了は100点。";
+  panel.appendChild(help);
+
+  // 先攻
+  const firstLabelEl = document.createElement("label");
+  firstLabelEl.className = "field-label";
+  firstLabelEl.textContent = "先攻プレイヤー";
+  panel.appendChild(firstLabelEl);
+  const firstGrid = document.createElement("div");
+  firstGrid.className = "choice-grid";
+  [1,2].forEach(p=>{
+    const b = document.createElement("button");
+    b.textContent = S.names[p];
+    b.className = (S.firstPlayer===p ? "selected":"");
+    b.addEventListener("click", ()=>{ S.firstPlayer = p; render(); });
+    firstGrid.appendChild(b);
+  });
+  panel.appendChild(firstGrid);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const startBtn = document.createElement("button");
+  startBtn.className = "primary";
+  startBtn.textContent = "ゲーム開始";
+  startBtn.addEventListener("click", ()=>{
+    S.names[1] = input1.value.trim() || "プレイヤー1";
+    S.names[2] = input2.value.trim() || "プレイヤー2";
+    S.scores = {1:0,2:0};
+    S.jokersLeft = {1:2,2:2};
+    S.round = 0;
+    S.stage = "GAME";
+    startRound();
+  });
+  btnrow.appendChild(startBtn);
+  panel.appendChild(btnrow);
+
+  app.appendChild(panel);
+
+  const rules = document.createElement("div");
+  rules.className = "panel panel-tight";
+  rules.innerHTML = '<h2 class="section-title" style="font-size:1rem;">勝利条件</h2><p class="lead" style="margin:0;">合計ポイントが先に規定ポイント（イージーは50ポイント、ノーマル・ハードは100ポイント）に到達したプレイヤーの勝利です。同ラウンドで両者が規定ポイントに到達し、かつ同点だった場合は、そのラウンドで先手だったプレイヤーの勝利となります。また、2ラウンド目以降の先手はそれまでの合計ポイントが高い方が務め、同点の場合はランダムで決まります。</p>';
+  app.appendChild(rules);
+}
+
+/* ============================= オンライン対戦：部屋作成・参加（ロビーのみ） ============================= */
+function resetOnline(){
+  const keepName = S.online.name;
+  S.online = { view:"choice", name:keepName, difficulty:"normal", roomCodeInput:"", gameId:null, roomCode:null, role:null, status:null, myName:null, opponentName:null, error:null, busy:false,
+    myReady:false, opponentReady:false, startTriggered:false, phase:null, round:0, firstPlayer:null, doubleColor:null, doubleDrawCards:null, myHand:[],
+    exchangeSubmitted:false, exchangeSelectedCardId:null, exchangeResult:null,
+    myReceivedCardId:null, discardSelectedCardId:null, myDrawnCard:null, myDrawnColor:null,
+    jokersLeft:null, jokerUsed:null, jokerDecided:false, myJokerPeek:null,
+    betColorCounts:null, myBets:{black:[],silver:[],gold:[]}, placementSelectedCard:null, placementSubmitted:false,
+    fieldCards:null, lastResult:null, scores:null, winner:null, tieBreakApplied:false, _resetRound:null };
+}
+
+// Supabase Realtimeからの更新を受け取るブリッジ（online-supabase.jsのmoduleスクリプトから呼ばれる）
+window.__online = {
+  onGameRow(row){
+    console.log("[online] onGameRow呼び出し:", row);
+    if(!row || S.stage !== "SETUP" || S.mode !== "online") return;
+    const o = S.online;
+    if(o.gameId && row.id !== o.gameId) return;
+    o.status = row.status;
+    o.roomCode = row.room_code;
+    o.round = row.round;
+    o.phase = row.phase;
+    o.difficulty = row.difficulty || o.difficulty;
+    o.firstPlayer = row.first_player;
+    o.doubleColor = row.double_color;
+    o.doubleDrawCards = row.double_draw_cards;
+    o.exchangeResult = row.exchange_result;
+    o.jokersLeft = row.jokers_left;
+    o.jokerUsed = row.joker_used;
+    o.betColorCounts = row.bet_color_counts;
+    o.fieldCards = row.field_cards;
+    o.lastResult = row.last_result;
+    o.scores = row.scores;
+    o.winner = (typeof row.winner === "number") ? row.winner : o.winner;
+    o.tieBreakApplied = !!row.tie_break_applied;
+    if(o.role === 1){
+      o.opponentName = row.player2_name || null;
+      o.myReady = !!row.player1_ready;
+      o.opponentReady = !!row.player2_ready;
+    } else if(o.role === 2){
+      o.opponentName = row.player1_name || null;
+      o.myReady = !!row.player2_ready;
+      o.opponentReady = !!row.player1_ready;
+    }
+
+    if(row.phase){
+      // サーバー側で配札済み → ゲーム開始状態の画面へ
+      o.view = "online_game";
+      if(row.phase === "ROUND_INTRO" && o._resetRound !== row.round){
+        // 新しいラウンドが始まったので、前ラウンドのUI用フラグ・一時状態をクリアする
+        o._resetRound = row.round;
+        o.exchangeSubmitted = false;
+        o.exchangeSelectedCardId = null;
+        o.discardSelectedCardId = null;
+        o.myDrawnCard = null;
+        o.myDrawnColor = null;
+        o.jokerDecided = false;
+        o.myJokerPeek = null;
+        o.placementSubmitted = false;
+        o.placementSelectedCard = null;
+        o.myBets = {black:[], silver:[], gold:[]};
+      }
+    } else if(row.status === "active"){
+      o.view = "matched";
+      // 両者が準備完了したら開始をリクエスト（サーバー側で多重開始は防止される）
+      if(o.myReady && o.opponentReady && !o.startTriggered && window.OnlineSupabase){
+        o.startTriggered = true;
+        window.OnlineSupabase.startRoundOnline({game_id:o.gameId}).catch(()=>{ o.startTriggered = false; });
+      }
+    }
+    render();
+  },
+  onPrivateRow(row){
+    if(!row || S.mode !== "online") return;
+    const o = S.online;
+    if(o.gameId && row.game_id !== o.gameId) return;
+    o.myHand = row.hand || [];
+    o.myReceivedCardId = row.received_card_id || null;
+    render();
+  }
+};
+
+function renderOnlineSetup(){
+  const o = S.online;
+
+  if(o.view === "online_game"){ renderOnlineGameStarted(); return; }
+
+  if(o.view === "matched"){
+    const panel = document.createElement("div");
+    panel.className = "panel center";
+    panel.innerHTML = '<h2 class="section-title">マッチ成立！</h2>'+
+      '<p class="lead">部屋番号：<b>'+(o.roomCode||"")+'</b><br>あなた：'+(o.myName||"")+'　　相手：'+(o.opponentName||"（取得中…）")+'</p>';
+
+    const status = document.createElement("div");
+    status.className = "notice info";
+    if(o.myReady && o.opponentReady){
+      status.textContent = "両者準備完了。まもなくゲームを開始します…";
+    } else if(o.myReady){
+      status.textContent = "準備完了しました。相手の準備を待っています…";
+    } else if(o.opponentReady){
+      status.textContent = "相手は準備完了しています。あなたの準備をお願いします。";
+    } else {
+      status.textContent = "準備ができたら「準備完了」を押してください。";
+    }
+    panel.appendChild(status);
+
+    if(o.error){
+      const err = document.createElement("div");
+      err.className = "notice";
+      err.textContent = o.error;
+      panel.appendChild(err);
+    }
+    app.appendChild(panel);
+
+    const btnrow = document.createElement("div");
+    btnrow.className = "btnrow";
+    btnrow.style.justifyContent = "center";
+
+    if(!o.myReady){
+      const readyBtn = document.createElement("button");
+      readyBtn.className = "primary";
+      readyBtn.textContent = o.busy ? "送信中…" : "準備完了";
+      readyBtn.disabled = o.busy;
+      readyBtn.addEventListener("click", async ()=>{
+        o.busy = true; o.error = null; render();
+        try{
+          await window.OnlineSupabase.setReady({game_id:o.gameId});
+        }catch(e){
+          o.error = "準備完了の送信に失敗しました： " + (e && e.message ? e.message : String(e));
+        }
+        o.busy = false;
+        render();
+      });
+      btnrow.appendChild(readyBtn);
+    }
+
+    const back = document.createElement("button");
+    back.className = "ghost";
+    back.textContent = "ロビーに戻る";
+    back.addEventListener("click", ()=>{
+      if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+      resetOnline();
+      render();
+    });
+    btnrow.appendChild(back);
+    app.appendChild(btnrow);
+    return;
+  }
+
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">オンライン対戦</h2><p class="lead">別々の端末から同じ部屋番号で接続します。まだ準備中の機能は「マッチ成立」までです。</p>';
+
+  if(!window.OnlineSupabase){
+    const warn = document.createElement("div");
+    warn.className = "notice";
+    warn.textContent = "オンライン接続用のスクリプトが読み込まれていません（online-supabase.js を確認してください）。";
+    panel.appendChild(warn);
+    app.appendChild(panel);
+    return;
+  }
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  const nameLabel = document.createElement("label");
+  nameLabel.className = "field-label";
+  nameLabel.textContent = "あなたの名前";
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.maxLength = 12;
+  nameInput.value = o.name;
+  nameInput.addEventListener("input", ()=>{ o.name = nameInput.value; });
+  panel.appendChild(nameLabel);
+  panel.appendChild(nameInput);
+
+  if(o.view === "choice"){
+    const grid = document.createElement("div");
+    grid.className = "choice-grid";
+    grid.style.marginTop = "16px";
+    const createBtn = document.createElement("button");
+    createBtn.className = "primary";
+    createBtn.textContent = "部屋を作る";
+    createBtn.addEventListener("click", ()=>{ o.view = "create_form"; o.error = null; render(); });
+    const joinBtn = document.createElement("button");
+    joinBtn.textContent = "部屋に参加する";
+    joinBtn.addEventListener("click", ()=>{ o.view = "join_form"; o.error = null; render(); });
+    grid.appendChild(createBtn);
+    grid.appendChild(joinBtn);
+    panel.appendChild(grid);
+  }
+
+  if(o.view === "create_form"){
+    const diffLabelEl = document.createElement("label");
+    diffLabelEl.className = "field-label";
+    diffLabelEl.textContent = "難易度";
+    panel.appendChild(diffLabelEl);
+    const diffGrid = document.createElement("div");
+    diffGrid.className = "choice-grid";
+    [["easy","イージー"],["normal","ノーマル"],["hard","ハード"]].forEach(([val,label])=>{
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.className = (o.difficulty===val ? "selected":"");
+      b.addEventListener("click", ()=>{ o.difficulty = val; render(); });
+      diffGrid.appendChild(b);
+    });
+    panel.appendChild(diffGrid);
+
+    const btnrow = document.createElement("div");
+    btnrow.className = "btnrow";
+    const goBtn = document.createElement("button");
+    goBtn.className = "primary";
+    goBtn.textContent = o.busy ? "作成中…" : "この内容で部屋を作る";
+    goBtn.disabled = o.busy;
+    goBtn.addEventListener("click", async ()=>{
+      o.busy = true; o.error = null; render();
+      try{
+        const nm = (o.name||"").trim() || "プレイヤー1";
+        o.name = nm; o.myName = nm;
+        const res = await window.OnlineSupabase.createRoom({name: nm, difficulty: o.difficulty});
+        o.gameId = res.game_id; o.roomCode = res.room_code; o.role = 1; o.status = "waiting";
+        o.view = "waiting"; o.busy = false;
+      }catch(e){
+        o.error = "部屋の作成に失敗しました： " + (e && e.message ? e.message : String(e));
+        o.busy = false;
+      }
+      render();
+    });
+    const backBtn = document.createElement("button");
+    backBtn.className = "ghost";
+    backBtn.textContent = "戻る";
+    backBtn.addEventListener("click", ()=>{ o.view = "choice"; render(); });
+    btnrow.appendChild(goBtn);
+    btnrow.appendChild(backBtn);
+    panel.appendChild(btnrow);
+  }
+
+  if(o.view === "waiting"){
+    const box = document.createElement("div");
+    box.className = "notice info center";
+    box.style.marginTop = "16px";
+    box.innerHTML = 'ルームコード<br><span style="font-size:2rem;font-weight:800;letter-spacing:.15em;">'+(o.roomCode||"")+'</span><br><span style="font-size:.85rem;">このコードを相手に伝えてください。相手の参加を待っています…</span>';
+    panel.appendChild(box);
+    const btnrow = document.createElement("div");
+    btnrow.className = "btnrow";
+    btnrow.style.justifyContent = "center";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "キャンセルして戻る";
+    cancelBtn.addEventListener("click", ()=>{
+      if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+      resetOnline();
+      render();
+    });
+    btnrow.appendChild(cancelBtn);
+    panel.appendChild(btnrow);
+  }
+
+  if(o.view === "join_form"){
+    const codeLabel = document.createElement("label");
+    codeLabel.className = "field-label";
+    codeLabel.textContent = "ルームコード（6桁）";
+    const codeInput = document.createElement("input");
+    codeInput.type = "text";
+    codeInput.maxLength = 6;
+    codeInput.inputMode = "numeric";
+    codeInput.value = o.roomCodeInput;
+    panel.appendChild(codeLabel);
+    panel.appendChild(codeInput);
+
+    const btnrow = document.createElement("div");
+    btnrow.className = "btnrow";
+    const goBtn = document.createElement("button");
+    goBtn.className = "primary";
+    goBtn.textContent = o.busy ? "参加中…" : "参加する";
+    goBtn.disabled = o.busy || o.roomCodeInput.length !== 6;
+
+    // render()で入力欄を作り直さず、入力のたびにボタンの有効/無効だけを更新する
+    codeInput.addEventListener("input", ()=>{
+      o.roomCodeInput = codeInput.value.replace(/[^0-9]/g,"");
+      if(codeInput.value !== o.roomCodeInput) codeInput.value = o.roomCodeInput;
+      goBtn.disabled = o.busy || o.roomCodeInput.length !== 6;
+    });
+
+    goBtn.addEventListener("click", async ()=>{
+      o.busy = true; o.error = null; render();
+      try{
+        const nm = (o.name||"").trim() || "プレイヤー2";
+        o.name = nm; o.myName = nm;
+        const res = await window.OnlineSupabase.joinRoom({name: nm, room_code: o.roomCodeInput});
+        o.gameId = res.game_id; o.roomCode = res.room_code; o.role = 2; o.status = res.status;
+        o.view = (res.status === "active") ? "matched" : "waiting";
+        o.busy = false;
+      }catch(e){
+        o.error = "参加に失敗しました： " + (e && e.message ? e.message : String(e));
+        o.busy = false;
+      }
+      render();
+    });
+    const backBtn = document.createElement("button");
+    backBtn.className = "ghost";
+    backBtn.textContent = "戻る";
+    backBtn.addEventListener("click", ()=>{ o.view = "choice"; render(); });
+    btnrow.appendChild(goBtn);
+    btnrow.appendChild(backBtn);
+    panel.appendChild(btnrow);
+  }
+
+  app.appendChild(panel);
+}
+
+function renderOnlineRoundIntro(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  panel.innerHTML = '<h2 class="section-title">第 '+(o.round||1)+' ラウンド開始</h2><p class="lead">山札をリセットし、2倍色を決めるカードを引きました。</p>';
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = o.busy ? "公開中…" : "カードを公開する";
+  btn.disabled = o.busy;
+  btn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.revealDoubleColor({game_id:o.gameId});
+    }catch(e){
+      o.error = "カードの公開に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderOnlineStatusBar(){
+  const o = S.online;
+  const sb = document.createElement("div");
+  sb.className = "scoreboard";
+  const sc = o.scores || {"1":0,"2":0};
+  const myScore = sc[String(o.role)] || 0;
+  const oppScore = sc[String(o.role===1?2:1)] || 0;
+  const doubleColorLabel = o.doubleColor
+    ? (o.doubleColor==="black"?"🖤":o.doubleColor==="silver"?"🩶":"🟨") + COLOR_LABEL[o.doubleColor]
+    : "—";
+  sb.innerHTML =
+    '<div class="who"><div class="name">自分</div><div class="pts">'+myScore+'</div></div>'+
+    '<div class="mid">2倍色<br>'+doubleColorLabel+'</div>'+
+    '<div class="who"><div class="name">相手</div><div class="pts">'+oppScore+'</div></div>';
+  app.appendChild(sb);
+}
+
+function renderOnlineGameStarted(){
+  const o = S.online;
+  renderOnlineStatusBar();
+
+  if(o.phase === "ROUND_INTRO"){
+    renderOnlineRoundIntro();
+    return;
+  }
+  if(o.phase === "EXCHANGE_SELECT"){
+    renderOnlineExchangeSelect();
+    return;
+  }
+  if(o.phase === "EXCHANGE_REVEAL"){
+    renderOnlineExchangeReveal();
+    return;
+  }
+  if(o.phase === "DISCARD"){
+    renderOnlineDiscard();
+    return;
+  }
+  if(o.phase === "DRAW_CHOICE"){
+    renderOnlineDrawChoice();
+    return;
+  }
+  if(o.phase === "JOKER_DECISION"){
+    renderOnlineJokerDecision();
+    return;
+  }
+  if(o.phase === "JOKER_ANNOUNCE"){
+    renderOnlineJokerAnnounce();
+    return;
+  }
+  if(o.phase === "PLACEMENT"){
+    renderOnlinePlacement();
+    return;
+  }
+  if(o.phase === "PLACEMENT_ANNOUNCE"){
+    renderOnlinePlacementAnnounce();
+    return;
+  }
+  if(o.phase === "FIELD_REVEAL"){
+    renderOnlineFieldReveal();
+    return;
+  }
+  if(o.phase === "SCORING"){
+    renderOnlineScoring();
+    return;
+  }
+  if(o.phase === "RESULT"){
+    renderOnlineResult();
+    return;
+  }
+
+  renderOnlineDoubleReveal();
+}
+
+function renderOnlineDoubleReveal(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  const firstLabel = (o.firstPlayer === o.role) ? "あなた" : (o.opponentName || "相手");
+  panel.innerHTML = '<h2 class="section-title">第 '+(o.round||1)+' ラウンド：2倍色の決定</h2>'+
+    '<p class="lead">部屋番号：'+(o.roomCode||"")+'　／　先攻：'+firstLabel+'</p>';
+
+  if(o.doubleDrawCards){
+    const row = document.createElement("div");
+    row.className = "field-row";
+    COLORS.forEach(c=>{
+      const item = document.createElement("div");
+      item.className = "field-item";
+      item.innerHTML = '<div class="cap">'+COLOR_LABEL_LONG[c]+'</div>';
+      item.appendChild(cardEl(o.doubleDrawCards[c]));
+      row.appendChild(item);
+    });
+    panel.appendChild(row);
+  }
+
+  if(o.doubleColor){
+    const dc = document.createElement("div");
+    dc.className = "notice info center";
+    dc.textContent = "2倍色： " + COLOR_LABEL[o.doubleColor];
+    panel.appendChild(dc);
+  }
+
+  const handWrap = document.createElement("div");
+  handWrap.innerHTML = '<div class="cap" style="font-size:.78rem;color:var(--ink-dim);margin:12px 0 6px;">あなたの初期手札</div>';
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  if(!o.myHand || o.myHand.length===0){
+    const wait = document.createElement("div");
+    wait.style.color = "var(--ink-dim)";
+    wait.style.fontSize = ".85rem";
+    wait.textContent = "手札を取得しています…";
+    hr.appendChild(wait);
+  } else {
+    o.myHand.forEach(c=> hr.appendChild(cardEl(c)));
+  }
+  handWrap.appendChild(hr);
+  panel.appendChild(handWrap);
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "primary";
+  nextBtn.textContent = o.busy ? "処理中…" : "交換へ進む";
+  nextBtn.disabled = o.busy;
+  nextBtn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.beginExchange({game_id:o.gameId});
+    }catch(e){
+      o.error = "交換フェーズへの移行に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(nextBtn);
+  app.appendChild(btnrow);
+
+  const backrow = document.createElement("div");
+  backrow.className = "btnrow";
+  backrow.style.justifyContent = "center";
+  const back = document.createElement("button");
+  back.className = "ghost";
+  back.textContent = "ロビーに戻る（対局からは抜けます）";
+  back.addEventListener("click", ()=>{
+    if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+    resetOnline();
+    render();
+  });
+  backrow.appendChild(back);
+  app.appendChild(backrow);
+}
+
+function renderOnlineExchangeSelect(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">カード交換</h2><p class="lead">自分の手札から相手に渡すカードを1枚選んでください。選んだ内容は、両者が選び終わるまで相手には一切送信されません。</p>';
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  if(o.exchangeSubmitted){
+    const info = document.createElement("div");
+    info.className = "notice info";
+    info.textContent = "選択を送信しました。相手の選択を待っています…";
+    panel.appendChild(info);
+    app.appendChild(panel);
+    return;
+  }
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  (o.myHand||[]).forEach(c=>{
+    const picked = o.exchangeSelectedCardId === c.id;
+    hr.appendChild(cardEl(c, {picked, onClick: ()=>{ o.exchangeSelectedCardId = (picked ? null : c.id); render(); }}));
+  });
+  panel.appendChild(hr);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = o.busy ? "送信中…" : "このカードを渡す";
+  btn.disabled = o.busy || !o.exchangeSelectedCardId;
+  btn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.submitExchange({game_id:o.gameId, card_id:o.exchangeSelectedCardId});
+      o.exchangeSubmitted = true;
+    }catch(e){
+      o.error = "交換カードの送信に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderOnlineExchangeReveal(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  panel.innerHTML = '<h2 class="section-title">交換結果（公開）</h2><p class="lead">両者が選んだカードが同時に公開・交換されました。</p>';
+
+  if(o.exchangeResult){
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const meLabel = o.role === 1 ? "あなた" : (o.opponentName || S.names[1]);
+    const otherLabel = o.role === 1 ? (o.opponentName || S.names[2]) : "あなた";
+    const item1 = document.createElement("div");
+    item1.className = "field-item";
+    item1.innerHTML = '<div class="cap">'+(o.role===1 ? "あなた" : (o.opponentName||"相手"))+' が渡したカード</div>';
+    item1.appendChild(cardEl(o.exchangeResult.p1Gave));
+    const item2 = document.createElement("div");
+    item2.className = "field-item";
+    item2.innerHTML = '<div class="cap">'+(o.role===2 ? "あなた" : (o.opponentName||"相手"))+' が渡したカード</div>';
+    item2.appendChild(cardEl(o.exchangeResult.p2Gave));
+    row.appendChild(o.role===1 ? item1 : item2);
+    row.appendChild(o.role===1 ? item2 : item1);
+    panel.appendChild(row);
+  }
+
+  const handWrap = document.createElement("div");
+  handWrap.innerHTML = '<div class="cap" style="font-size:.78rem;color:var(--ink-dim);margin:12px 0 6px;">あなたの現在の手札</div>';
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  (o.myHand||[]).forEach(c=> hr.appendChild(cardEl(c)));
+  handWrap.appendChild(hr);
+  panel.appendChild(handWrap);
+
+  const note = document.createElement("div");
+  note.className = "notice";
+  note.style.marginTop = "16px";
+  note.textContent = "次は捨て札です。";
+  panel.appendChild(note);
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "primary";
+  nextBtn.textContent = o.busy ? "処理中…" : "捨て札へ進む";
+  nextBtn.disabled = o.busy;
+  nextBtn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.beginDiscard({game_id:o.gameId});
+    }catch(e){
+      o.error = "捨て札フェーズへの移行に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(nextBtn);
+  app.appendChild(btnrow);
+
+  const backrow = document.createElement("div");
+  backrow.className = "btnrow";
+  backrow.style.justifyContent = "center";
+  const back = document.createElement("button");
+  back.className = "ghost";
+  back.textContent = "ロビーに戻る（対局からは抜けます）";
+  back.addEventListener("click", ()=>{
+    if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+    resetOnline();
+    render();
+  });
+  backrow.appendChild(back);
+  app.appendChild(backrow);
+}
+
+function renderOnlineDiscard(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">捨て札</h2><p class="lead">元々の手札から1枚捨ててください。交換で受け取ったカード（枠付き）は捨てられません。</p>';
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  if((o.myHand||[]).length <= 5){
+    const info = document.createElement("div");
+    info.className = "notice info";
+    info.textContent = "捨て札を確定しました。相手を待っています…";
+    panel.appendChild(info);
+    app.appendChild(panel);
+    return;
+  }
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  (o.myHand||[]).forEach(c=>{
+    const isReceived = (c.id === o.myReceivedCardId);
+    const picked = o.discardSelectedCardId === c.id;
+    const el = cardEl(c, {picked, onClick: isReceived ? null : ()=>{ o.discardSelectedCardId = (picked?null:c.id); render(); }});
+    if(isReceived){
+      el.style.opacity = "0.55";
+      el.style.outline = "2px solid var(--accent-2)";
+      el.title = "受け取ったカード（捨てられません）";
+    }
+    hr.appendChild(el);
+  });
+  panel.appendChild(hr);
+  const note = document.createElement("div");
+  note.className = "helpbox";
+  note.textContent = "枠線がついているカードは今回相手から受け取ったカードです。";
+  panel.appendChild(note);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = o.busy ? "送信中…" : "このカードを捨てる";
+  btn.disabled = o.busy || !o.discardSelectedCardId;
+  btn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.submitDiscard({game_id:o.gameId, card_id:o.discardSelectedCardId});
+      o.discardSelectedCardId = null;
+    }catch(e){
+      o.error = "捨て札の送信に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderOnlineDrawChoice(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">山から1枚引く</h2><p class="lead">黒・銀・金いずれかの山から1枚引いて手札を6枚に戻します。</p>';
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  (o.myHand||[]).forEach(c=> hr.appendChild(cardEl(c, {small:true})));
+  panel.appendChild(hr);
+
+  if((o.myHand||[]).length >= 6){
+    const info = document.createElement("div");
+    info.className = "notice info";
+    if(o.myDrawnCard){
+      info.appendChild(document.createTextNode(COLOR_LABEL_LONG[o.myDrawnColor]+"から引きました："));
+      info.appendChild(cardEl(o.myDrawnCard, {small:true}));
+    } else {
+      info.textContent = "ドロー済みです。";
+    }
+    panel.appendChild(info);
+
+    const note = document.createElement("div");
+    note.className = "notice";
+    note.style.marginTop = "16px";
+    note.textContent = "ここまでがオンライン対戦の実装範囲です。ジョーカー・配置・得点計算のオンライン同期は次のステップで実装します。";
+    panel.appendChild(note);
+    app.appendChild(panel);
+  } else {
+    const grid = document.createElement("div");
+    grid.className = "choice-grid";
+    COLORS.forEach(c=>{
+      const b = document.createElement("button");
+      b.textContent = COLOR_LABEL_LONG[c];
+      b.disabled = o.busy;
+      b.addEventListener("click", async ()=>{
+        o.busy = true; o.error = null; render();
+        try{
+          const res = await window.OnlineSupabase.submitDraw({game_id:o.gameId, color:c});
+          if(res && res.drawn_card){
+            o.myDrawnCard = res.drawn_card;
+            o.myDrawnColor = c;
+          }
+        }catch(e){
+          o.error = "ドローに失敗しました： " + (e && e.message ? e.message : String(e));
+        }
+        o.busy = false;
+        render();
+      });
+      grid.appendChild(b);
+    });
+    panel.appendChild(grid);
+    app.appendChild(panel);
+  }
+
+  const backrow = document.createElement("div");
+  backrow.className = "btnrow";
+  backrow.style.justifyContent = "center";
+  const back = document.createElement("button");
+  back.className = "ghost";
+  back.textContent = "ロビーに戻る（対局からは抜けます）";
+  back.addEventListener("click", ()=>{
+    if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+    resetOnline();
+    render();
+  });
+  backrow.appendChild(back);
+  app.appendChild(backrow);
+}
+
+function renderOnlineJokerDecision(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">あなたの手札</h2><p class="lead">この6枚を、これから黒・銀・金の山に配置します。</p>';
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  (o.myHand||[]).forEach(c=> hr.appendChild(cardEl(c)));
+  panel.appendChild(hr);
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  const myKey = String(o.role);
+  const myJokersLeft = (o.jokersLeft && typeof o.jokersLeft[myKey] === "number") ? o.jokersLeft[myKey] : 0;
+
+  if(o.jokerDecided){
+    const info = document.createElement("div");
+    info.className = "notice info";
+    info.style.marginTop = "14px";
+    if(o.myJokerPeek){
+      if(o.myJokerPeek.mode === "all"){
+        info.innerHTML = "🃏 あなたが確認した場の数字 — 黒: "+o.myJokerPeek.values.black+" / 銀: "+o.myJokerPeek.values.silver+" / 金: "+o.myJokerPeek.values.gold;
+      } else {
+        info.textContent = "🃏 あなたが確認した場の数字 — "+COLOR_LABEL_LONG[o.myJokerPeek.color]+": "+o.myJokerPeek.value;
+      }
+    } else {
+      info.textContent = "判断済みです。相手を待っています…";
+    }
+    panel.appendChild(info);
+    app.appendChild(panel);
+    return;
+  }
+
+  const divider = document.createElement("hr");
+  divider.className = "divider";
+  panel.appendChild(divider);
+
+  const doJoker = async (action, color)=>{
+    o.busy = true; o.error = null; render();
+    try{
+      const res = await window.OnlineSupabase.submitJoker({game_id:o.gameId, action, color});
+      o.jokerDecided = true;
+      if(res && res.joker_peek) o.myJokerPeek = res.joker_peek;
+    }catch(e){
+      o.error = "ジョーカーの判断の送信に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  };
+
+  if(myJokersLeft > 0){
+    const q = document.createElement("p");
+    q.className = "lead";
+    q.style.margin = "0 0 10px";
+    q.textContent = "ジョーカーを使いますか？（残り "+myJokersLeft+" 枚。使用は相手にも公開されます）";
+    panel.appendChild(q);
+
+    if(o.difficulty !== "hard"){
+      const grid = document.createElement("div");
+      grid.className = "choice-grid";
+      COLORS.forEach(c=>{
+        const b = document.createElement("button");
+        b.textContent = "ジョーカー使用：" + COLOR_LABEL_LONG[c] + "を見る";
+        b.disabled = o.busy;
+        b.addEventListener("click", ()=> doJoker("use", c));
+        grid.appendChild(b);
+      });
+      panel.appendChild(grid);
+    } else {
+      const b = document.createElement("button");
+      b.className = "primary";
+      b.textContent = "ジョーカー使用：3つの場をすべて見る";
+      b.disabled = o.busy;
+      b.addEventListener("click", ()=> doJoker("use"));
+      panel.appendChild(b);
+    }
+  } else {
+    const info = document.createElement("div");
+    info.className = "notice";
+    info.textContent = "ジョーカーの残りがありません。";
+    panel.appendChild(info);
+  }
+
+  const skip = document.createElement("button");
+  skip.className = "ghost";
+  skip.style.marginTop = "14px";
+  skip.disabled = o.busy;
+  skip.textContent = "ジョーカーを使わずに進む";
+  skip.addEventListener("click", ()=> doJoker("skip"));
+  panel.appendChild(document.createElement("br"));
+  panel.appendChild(skip);
+
+  app.appendChild(panel);
+}
+
+function renderOnlineJokerAnnounce(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  panel.innerHTML = '<h2 class="section-title">ジョーカー使用状況</h2>';
+
+  const ju = o.jokerUsed || {"1":false,"2":false};
+  const myName = o.myName || S.names[o.role] || "あなた";
+  const oppName = o.opponentName || "相手";
+  const myUsed = !!ju[String(o.role)];
+  const oppUsed = !!ju[String(o.role===1?2:1)];
+
+  const info = document.createElement("p");
+  info.className = "lead";
+  info.style.margin = "0 0 16px";
+  info.style.whiteSpace = "pre-line";
+  info.textContent =
+    (myUsed ? myName+" はジョーカーを使用しました。" : myName+" はジョーカーを使用しませんでした。")+"\n"+
+    (oppUsed ? oppName+" はジョーカーを使用しました。" : oppName+" はジョーカーを使用しませんでした。");
+  panel.appendChild(info);
+
+  if(o.myJokerPeek){
+    const jb = document.createElement("div");
+    jb.className = "notice info";
+    if(o.myJokerPeek.mode === "all"){
+      jb.innerHTML = "🃏 あなたが確認した場の数字 — 黒: "+o.myJokerPeek.values.black+" / 銀: "+o.myJokerPeek.values.silver+" / 金: "+o.myJokerPeek.values.gold;
+    } else {
+      jb.textContent = "🃏 あなたが確認した場の数字 — "+COLOR_LABEL_LONG[o.myJokerPeek.color]+": "+o.myJokerPeek.value;
+    }
+    panel.appendChild(jb);
+  }
+
+  const note = document.createElement("div");
+  note.className = "notice";
+  note.textContent = "次はカードの配置です。";
+  panel.appendChild(note);
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "primary";
+  nextBtn.textContent = o.busy ? "処理中…" : "配置へ進む";
+  nextBtn.disabled = o.busy;
+  nextBtn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.beginPlacement({game_id:o.gameId});
+    }catch(e){
+      o.error = "配置フェーズへの移行に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(nextBtn);
+  app.appendChild(btnrow);
+
+  const backrow = document.createElement("div");
+  backrow.className = "btnrow";
+  backrow.style.justifyContent = "center";
+  const back = document.createElement("button");
+  back.className = "ghost";
+  back.textContent = "ロビーに戻る（対局からは抜けます）";
+  back.addEventListener("click", ()=>{
+    if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+    resetOnline();
+    render();
+  });
+  backrow.appendChild(back);
+  app.appendChild(backrow);
+}
+
+function onlineNameForSlot(slot){
+  const o = S.online;
+  return (slot === o.role) ? (o.myName||"あなた") : (o.opponentName||"相手");
+}
+
+function betColorCountsTotal(countsForPlayer){
+  if(!countsForPlayer) return 0;
+  let total = 0;
+  COLORS.forEach(pile=>{
+    const c = countsForPlayer[pile];
+    if(c) COLORS.forEach(cc=> total += (c[cc]||0));
+  });
+  return total;
+}
+
+function renderOnlinePlacement(){
+  const o = S.online;
+  const isFirstPlacer = (o.firstPlayer === o.role);
+  const firstSlot = o.firstPlayer;
+  const firstCounts = o.betColorCounts && o.betColorCounts[String(firstSlot)];
+  const firstDone = betColorCountsTotal(firstCounts) >= 6;
+
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">カードの配置</h2><p class="lead">手札からカードを選び、置きたい山をタップしてください。相手には「何色が何枚あるか」だけが見えます。</p>';
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  if(o.placementSubmitted){
+    const info = document.createElement("div");
+    info.className = "notice info";
+    info.textContent = "配置を確定しました。相手を待っています…";
+    panel.appendChild(info);
+    app.appendChild(panel);
+    return;
+  }
+
+  if(!isFirstPlacer && !firstDone){
+    const info = document.createElement("div");
+    info.className = "notice info";
+    info.textContent = "先手の配置が終わるまでお待ちください（自分の配置の準備だけ進めておけます）。";
+    panel.appendChild(info);
+  }
+
+  const placed = new Set();
+  COLORS.forEach(c=> o.myBets[c].forEach(id=>placed.add(id)));
+  const unplaced = (o.myHand||[]).filter(c=> !placed.has(c.id));
+
+  const cols = document.createElement("div");
+  cols.className = "pile-cols";
+  COLORS.forEach(c=>{
+    const col = document.createElement("div");
+    const canDrop = !!o.placementSelectedCard;
+    col.className = "pile-col c-"+c + (canDrop ? " target-hint selectable" : "");
+    col.innerHTML = '<h4>'+COLOR_LABEL_LONG[c]+'</h4>';
+
+    const oppInfo = document.createElement("div");
+    oppInfo.className = "opp-info";
+    if(!isFirstPlacer && firstDone && firstCounts){
+      const oc = firstCounts[c] || {black:0,silver:0,gold:0};
+      const total = oc.black+oc.silver+oc.gold;
+      if(total===0){
+        oppInfo.textContent = onlineNameForSlot(firstSlot)+": なし";
+      } else {
+        oppInfo.innerHTML = onlineNameForSlot(firstSlot)+": "+COLORS.filter(cc=>oc[cc]).map(cc=>'<span class="badge">'+COLOR_LABEL[cc]+oc[cc]+'</span>').join("");
+      }
+    }
+    col.appendChild(oppInfo);
+
+    const cardsHere = document.createElement("div");
+    cardsHere.className = "cards-here";
+    o.myBets[c].forEach(id=>{
+      const card = (o.myHand||[]).find(x=>x.id===id);
+      if(!card) return;
+      cardsHere.appendChild(cardEl(card, {small:true, onClick:(ev)=>{
+        ev.stopPropagation();
+        o.myBets[c] = o.myBets[c].filter(x=>x!==id);
+        render();
+      }}));
+    });
+    col.appendChild(cardsHere);
+
+    const dropLabel = document.createElement("div");
+    dropLabel.className = "drop-label";
+    dropLabel.textContent = "タップして置く";
+    col.appendChild(dropLabel);
+
+    if(canDrop){
+      col.addEventListener("click", ()=>{
+        o.myBets[c].push(o.placementSelectedCard);
+        o.placementSelectedCard = null;
+        render();
+      });
+    }
+    cols.appendChild(col);
+  });
+  panel.appendChild(cols);
+
+  const handWrap = document.createElement("div");
+  handWrap.style.marginTop = "16px";
+  handWrap.innerHTML = '<div class="cap" style="font-size:.78rem;color:var(--ink-dim);margin-bottom:6px;">手札（タップして選び、上の山をタップして置く）</div>';
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  if(unplaced.length===0){
+    const done = document.createElement("div");
+    done.style.color = "var(--ink-dim)";
+    done.style.fontSize = ".82rem";
+    done.textContent = "すべて配置済みです。";
+    hr.appendChild(done);
+  }
+  unplaced.forEach(c=>{
+    const picked = o.placementSelectedCard === c.id;
+    hr.appendChild(cardEl(c, {picked, onClick: ()=>{ o.placementSelectedCard = (picked?null:c.id); render(); }}));
+  });
+  handWrap.appendChild(hr);
+  panel.appendChild(handWrap);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = o.busy ? "送信中…" : "配置を確定する";
+  const canSubmit = (unplaced.length===0) && (isFirstPlacer || firstDone) && !o.busy;
+  btn.disabled = !canSubmit;
+  btn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.submitPlacement({game_id:o.gameId, bets:o.myBets});
+      o.placementSubmitted = true;
+    }catch(e){
+      o.error = "配置の送信に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderOnlinePlacementAnnounce(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">配置の公開情報</h2><p class="lead">それぞれの山に、何色のカードが何枚置かれたかが公開されます（数字はまだ分かりません）。</p>';
+
+  [1,2].forEach(slot=>{
+    const block = document.createElement("div");
+    block.style.marginBottom = "14px";
+    block.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">'+onlineNameForSlot(slot)+'</div>';
+    const counts = (o.betColorCounts && o.betColorCounts[String(slot)]) || {};
+    COLORS.forEach(c=>{
+      const oc = counts[c] || {black:0,silver:0,gold:0};
+      const line = document.createElement("div");
+      line.style.fontSize = ".86rem";
+      line.style.marginBottom = "4px";
+      const parts = COLORS.filter(cc=>oc[cc]).map(cc=> COLOR_LABEL[cc]+oc[cc]+"枚").join("、") || "（0枚）";
+      line.innerHTML = COLOR_LABEL_LONG[c] + "： " + parts;
+      block.appendChild(line);
+    });
+    panel.appendChild(block);
+  });
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = o.busy ? "処理中…" : "場のカードを公開する";
+  btn.disabled = o.busy;
+  btn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.revealField({game_id:o.gameId});
+    }catch(e){
+      o.error = "場札の公開に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderOnlineFieldReveal(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">場のカードを公開</h2><p class="lead">各山の場のカードです。この数字を巡って勝負します。</p>';
+  const row = document.createElement("div");
+  row.className = "field-row";
+  COLORS.forEach(c=>{
+    const item = document.createElement("div");
+    item.className = "field-item";
+    item.innerHTML = '<div class="cap">'+COLOR_LABEL_LONG[c]+(c===o.doubleColor?' ✦2倍色':'')+'</div>';
+    if(o.fieldCards && o.fieldCards[c]) item.appendChild(cardEl(o.fieldCards[c]));
+    row.appendChild(item);
+  });
+  panel.appendChild(row);
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = o.busy ? "計算中…" : "勝敗を計算する";
+  btn.disabled = o.busy;
+  btn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.computeScoringOnline({game_id:o.gameId});
+    }catch(e){
+      o.error = "得点計算に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderOnlineScoring(){
+  const o = S.online;
+  const r = o.lastResult;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">第 '+(o.round||1)+' ラウンド結果</h2><p class="lead" style="margin:-4px 0 4px;">色当て：山の色と同じ色のカードは、その山での得点が常に×2になります。2倍色は、その色の山を獲得したときの獲得ポイントを×2にします。</p>';
+
+  if(!r){
+    const wait = document.createElement("div");
+    wait.className = "notice info";
+    wait.textContent = "結果を取得しています…";
+    panel.appendChild(wait);
+    app.appendChild(panel);
+    return;
+  }
+
+  COLORS.forEach(pile=>{
+    const box = document.createElement("div");
+    box.className = "pile-result";
+    const res = r.results[pile];
+    let title = COLOR_LABEL_LONG[pile] + '（場：' + (o.fieldCards && o.fieldCards[pile] ? o.fieldCards[pile].number : "?") + '）';
+    if(pile === o.doubleColor) title += ' <span class="badge gold">2倍色</span>';
+    box.innerHTML = '<h4>'+title+'</h4>';
+
+    const table = document.createElement("table");
+    table.className = "calc";
+    table.innerHTML = '<tr><th>プレイヤー</th><th>カード内訳</th><th>合計得点</th></tr>';
+    [1,2].forEach(slot=>{
+      const tr = document.createElement("tr");
+      if(res.winner === slot) tr.className = "win-row";
+      const nameTd = document.createElement("td");
+      nameTd.textContent = onlineNameForSlot(slot);
+      const cardsTd = document.createElement("td");
+      const items = r.detail[slot][pile];
+      if(!items || items.length===0){ cardsTd.textContent = "（なし）"; }
+      (items||[]).forEach(it=>{
+        const span = document.createElement("span");
+        span.className = "badge";
+        if(it.home){
+          let txt = COLOR_LABEL[it.card.color]+it.card.number+" → "+it.home.strength;
+          if(it.home.mult>1) txt += "（×"+it.home.mult+"）";
+          span.textContent = txt;
+        } else if(it.away){
+          let txt = "6の効果("+COLOR_LABEL_LONG[it.broadcastFrom]+"より) → "+it.away.strength;
+          if(it.away.mult>1) txt += "（×"+it.away.mult+"）";
+          span.textContent = txt;
+          span.style.borderColor = "#7a6a2e";
+        }
+        cardsTd.appendChild(span);
+      });
+      const totalTd = document.createElement("td");
+      totalTd.textContent = String(res[slot===1?"s1":"s2"]);
+      totalTd.style.fontWeight = "700";
+      tr.appendChild(nameTd); tr.appendChild(cardsTd); tr.appendChild(totalTd);
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+
+    const wline = document.createElement("div");
+    wline.className = "winner-line";
+    if(res.winner){
+      let txt = "🏆 "+onlineNameForSlot(res.winner)+" が獲得： "+(o.fieldCards && o.fieldCards[pile] ? o.fieldCards[pile].number : "?");
+      if(res.doubled) txt += " ×2（2倍色）";
+      if(res.zeroBonus) txt += " ×2（0の効果）";
+      txt += " = "+res.points+"ポイント";
+      wline.textContent = txt;
+    } else {
+      wline.textContent = "引き分け（この山の獲得なし）";
+    }
+    box.appendChild(wline);
+    panel.appendChild(box);
+  });
+
+  app.appendChild(panel);
+
+  const scorePanel = document.createElement("div");
+  scorePanel.className = "panel center";
+  const sc = o.scores || {"1":0,"2":0};
+  scorePanel.innerHTML = '<h2 class="section-title">合計ポイント</h2>'+
+    '<p style="font-size:1.1rem;">'+onlineNameForSlot(1)+'：<b>'+(sc["1"]||0)+'</b>　　'+onlineNameForSlot(2)+'：<b>'+(sc["2"]||0)+'</b></p>';
+  app.appendChild(scorePanel);
+
+  const note = document.createElement("div");
+  note.className = "notice";
+  const th = (S.difficulty==="easy") ? 50 : 100; // 表示用（実際の判定は常にサーバー側）
+  const gameOverGuess = (sc["1"]||0) >= th || (sc["2"]||0) >= th;
+  note.textContent = gameOverGuess
+    ? "しきい値に到達しています。「最終結果を見る」を押してください。"
+    : "次のラウンドに進みましょう。";
+  panel.appendChild(note);
+
+  if(o.error){
+    const err = document.createElement("div");
+    err.className = "notice";
+    err.textContent = o.error;
+    panel.appendChild(err);
+  }
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "primary";
+  nextBtn.textContent = o.busy ? "処理中…" : (gameOverGuess ? "最終結果を見る" : "次のラウンドへ");
+  nextBtn.disabled = o.busy;
+  nextBtn.addEventListener("click", async ()=>{
+    o.busy = true; o.error = null; render();
+    try{
+      await window.OnlineSupabase.nextRound({game_id:o.gameId});
+    }catch(e){
+      o.error = "次の処理に失敗しました： " + (e && e.message ? e.message : String(e));
+    }
+    o.busy = false;
+    render();
+  });
+  btnrow.appendChild(nextBtn);
+  app.appendChild(btnrow);
+
+  const backrow = document.createElement("div");
+  backrow.className = "btnrow";
+  backrow.style.justifyContent = "center";
+  const back = document.createElement("button");
+  back.className = "ghost";
+  back.textContent = "ロビーに戻る（対局からは抜けます）";
+  back.addEventListener("click", ()=>{
+    if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+    resetOnline();
+    render();
+  });
+  backrow.appendChild(back);
+  app.appendChild(backrow);
+}
+
+function renderOnlineResult(){
+  const o = S.online;
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  const sc = o.scores || {"1":0,"2":0};
+  const winnerName = o.winner ? onlineNameForSlot(o.winner) : "?";
+  panel.innerHTML = '<h2 class="section-title" style="font-size:1.5rem;">'+winnerName+' の勝利！</h2>'+
+    '<p style="font-size:1.1rem;margin:10px 0 20px;">最終ポイント　'+onlineNameForSlot(1)+'：<b>'+(sc["1"]||0)+'</b>　　'+onlineNameForSlot(2)+'：<b>'+(sc["2"]||0)+'</b></p>';
+  app.appendChild(panel);
+
+  if(o.tieBreakApplied){
+    const note = document.createElement("div");
+    note.className = "notice info";
+    note.style.maxWidth = "520px";
+    note.style.margin = "-10px auto 16px";
+    note.textContent = "同点で両者が規定ポイントに到達したため、最終ラウンドで先手だった "+winnerName+" の勝利となりました。";
+    app.appendChild(note);
+  }
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const back = document.createElement("button");
+  back.className = "primary";
+  back.textContent = "ロビーに戻る（新しい部屋を作成・参加できます）";
+  back.addEventListener("click", ()=>{
+    if(window.OnlineSupabase) window.OnlineSupabase.unsubscribeGame();
+    resetOnline();
+    render();
+  });
+  btnrow.appendChild(back);
+  app.appendChild(btnrow);
+}
+
+
+function startRound(){
+  S.round += 1;
+  S.piles = { black: makeColorPile("black"), silver: makeColorPile("silver"), gold: makeColorPile("gold") };
+  S.doubleColor = null;
+  S.doubleDrawCards = {black:null,silver:null,gold:null};
+  S.fieldCards = {black:null,silver:null,gold:null};
+  S.hands = {1:[],2:[]};
+  S.jokerUsed = {1:false,2:false};
+  S.jokerPeek = {1:null,2:null};
+  S.exchangeChoice = {1:null,2:null};
+  S.exchangeResult = null;
+  S.receivedCardId = {1:null,2:null};
+  S.discarded = {1:null,2:null};
+  S.drawnCard = {1:null,2:null};
+  S.drawnColor = {1:null,2:null};
+  S.tempSelectedCard = null;
+  S.bets = {1:{black:[],silver:[],gold:[]}, 2:{black:[],silver:[],gold:[]}};
+  S.effectiveCards = null;
+  S.threeSixResolution = null;
+  S.threeTargetQueue = [];
+  S.threeTargetIndex = 0;
+  S.threeTargetSelectedCard = null;
+  S.lastResult = null;
+
+  // 2倍色決定カード
+  COLORS.forEach(c=>{ S.doubleDrawCards[c] = S.piles[c].pop(); });
+  const sum = S.doubleDrawCards.black.number + S.doubleDrawCards.silver.number + S.doubleDrawCards.gold.number;
+  S.doubleColor = COLOR_MOD_MAP[sum % 3];
+
+  // 場のカード（非公開）
+  COLORS.forEach(c=>{ S.fieldCards[c] = S.piles[c].pop(); });
+
+  // 配札
+  const order = [S.firstPlayer, other(S.firstPlayer)];
+  order.forEach(p=>{
+    COLORS.forEach(c=>{
+      S.hands[p].push(S.piles[c].pop());
+      S.hands[p].push(S.piles[c].pop());
+    });
+  });
+
+  S.phase = "ROUND_INTRO";
+  render();
+}
+
+function renderRoundIntro(){
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  panel.innerHTML = '<h2 class="section-title">第 '+S.round+' ラウンド開始</h2><p class="lead">山札をリセットし、2倍色を決めるカードを引きました。</p>';
+  app.appendChild(panel);
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow center";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "カードを公開する";
+  btn.addEventListener("click", ()=>{ S.phase = "DOUBLE_REVEAL"; render(); });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderDoubleReveal(){
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">2倍色の決定</h2><p class="lead">黒・銀・金の山からそれぞれ1枚引いた結果です。</p>';
+  const row = document.createElement("div");
+  row.className = "field-row";
+  COLORS.forEach(c=>{
+    const item = document.createElement("div");
+    item.className = "field-item";
+    item.innerHTML = '<div class="cap">'+COLOR_LABEL_LONG[c]+'</div>';
+    item.appendChild(cardEl(S.doubleDrawCards[c]));
+    row.appendChild(item);
+  });
+  panel.appendChild(row);
+  const sum = S.doubleDrawCards.black.number + S.doubleDrawCards.silver.number + S.doubleDrawCards.gold.number;
+  const info = document.createElement("div");
+  info.className = "notice info center";
+  info.innerHTML = "合計 "+sum+" ÷ 3 の余り = "+(sum%3)+" → 2倍色は <b>"+COLOR_LABEL[S.doubleColor]+"</b> です";
+  panel.appendChild(info);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "配札へ進む（各自 黒2・銀2・金2）";
+  btn.addEventListener("click", ()=>{
+    S.phase = "EXCHANGE_SELECT";
+    S.pendingPlayer = S.firstPlayer;
+    S.revealed = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+/* ============================= ジョーカー ============================= */
+function renderJokerDecision(){
+  const p = S.pendingPlayer;
+  if(!S.revealed){
+    renderPrivateCover(p, ()=>{ S.revealed = true; render(); }, "配置（ベット）の直前です。ジョーカーを使うか判断します。");
+    return;
+  }
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">'+S.names[p]+' の手札</h2><p class="lead">この6枚を、これから黒・銀・金の山に配置します。</p>';
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  S.hands[p].forEach(c=> hr.appendChild(cardEl(c)));
+  panel.appendChild(hr);
+
+  if(S.jokersLeft[p] > 0){
+    const jp = document.createElement("div");
+    jp.className = "divider";
+    panel.appendChild(jp);
+    const q = document.createElement("p");
+    q.className = "lead";
+    q.style.margin = "0 0 10px";
+    q.textContent = "ジョーカーを使いますか？（残り "+S.jokersLeft[p]+" 枚。使用は相手にも公開されます）";
+    panel.appendChild(q);
+
+    if(S.difficulty !== "hard" && S.difficulty !== "super_hard"){
+      const grid = document.createElement("div");
+      grid.className = "choice-grid";
+      COLORS.forEach(c=>{
+        const b = document.createElement("button");
+        b.textContent = "ジョーカー使用：" + COLOR_LABEL_LONG[c] + "を見る";
+        b.addEventListener("click", ()=>{
+          S.jokersLeft[p] -= 1;
+          S.jokerUsed[p] = true;
+          S.jokerPeek[p] = {mode:"single", color:c, value:S.fieldCards[c].number};
+          proceedJoker();
+        });
+        grid.appendChild(b);
+      });
+      panel.appendChild(grid);
+    } else {
+      const b = document.createElement("button");
+      b.className = "primary";
+      b.textContent = "ジョーカー使用：3つの場をすべて見る";
+      b.addEventListener("click", ()=>{
+        S.jokersLeft[p] -= 1;
+        S.jokerUsed[p] = true;
+        S.jokerPeek[p] = {mode:"all", values:{black:S.fieldCards.black.number, silver:S.fieldCards.silver.number, gold:S.fieldCards.gold.number}};
+        proceedJoker();
+      });
+      panel.appendChild(b);
+    }
+  } else {
+    const info = document.createElement("div");
+    info.className = "notice";
+    info.textContent = "ジョーカーの残りがありません。";
+    panel.appendChild(info);
+  }
+
+  const skip = document.createElement("button");
+  skip.className = "ghost";
+  skip.style.marginTop = "14px";
+  skip.textContent = "ジョーカーを使わずに進む";
+  skip.addEventListener("click", proceedJoker);
+  panel.appendChild(document.createElement("br"));
+  panel.appendChild(skip);
+
+  app.appendChild(panel);
+
+  function proceedJoker(){
+    if(p === S.firstPlayer){
+      S.pendingPlayer = other(S.firstPlayer);
+      S.revealed = false;
+    } else {
+      S.phase = "JOKER_ANNOUNCE";
+      S.pendingPlayer = null;
+      S.revealed = false;
+    }
+    render();
+  }
+}
+
+function renderJokerAnnounce(){
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  panel.innerHTML = '<h2 class="section-title">ジョーカー使用状況</h2>';
+  const p1used = S.jokerUsed[1], p2used = S.jokerUsed[2];
+  const info = document.createElement("p");
+  info.className = "lead";
+  info.style.margin = "0 0 16px";
+  info.textContent =
+    (p1used ? S.names[1]+" はジョーカーを使用しました。 " : S.names[1]+" はジョーカーを使用しませんでした。 ")+"\n"+
+    (p2used ? S.names[2]+" はジョーカーを使用しました。" : S.names[2]+" はジョーカーを使用しませんでした。");
+  info.style.whiteSpace = "pre-line";
+  panel.appendChild(info);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "カードの配置へ進む";
+  btn.addEventListener("click", ()=>{
+    S.phase = "PLACEMENT";
+    S.pendingPlayer = S.firstPlayer;
+    S.revealed = false;
+    S.tempSelectedCard = null;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+/* ============================= カード交換 ============================= */
+function renderExchangeSelect(){
+  const p = S.pendingPlayer;
+  if(!S.revealed){
+    renderPrivateCover(p, ()=>{ S.revealed = true; render(); }, "相手に渡すカードを1枚選びます。");
+    return;
+  }
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">'+S.names[p]+' — カードを1枚選んで相手に渡す</h2><p class="lead">選んだカードは相手の手に渡ります（あとで公開されます）。</p>';
+
+  const jb = jokerReminderBox(p);
+  if(jb) panel.appendChild(jb);
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  S.hands[p].forEach(c=>{
+    const picked = S.exchangeChoice[p] === c.id;
+    hr.appendChild(cardEl(c, {onClick:()=>{ S.exchangeChoice[p] = c.id; render(); }, picked}));
+  });
+  panel.appendChild(hr);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "このカードを渡す";
+  btn.disabled = !S.exchangeChoice[p];
+  btn.addEventListener("click", ()=>{
+    if(p === S.firstPlayer){
+      S.pendingPlayer = other(S.firstPlayer);
+      S.revealed = false;
+    } else {
+      doExchange();
+      S.phase = "EXCHANGE_REVEAL";
+      S.revealed = false;
+    }
+    render();
+  });
+  btnrow.appendChild(btn);
+  panel.appendChild(btnrow);
+  app.appendChild(panel);
+}
+
+function doExchange(){
+  const c1id = S.exchangeChoice[1], c2id = S.exchangeChoice[2];
+  const card1 = removeCard(S.hands[1], c1id); // player1's given card
+  const card2 = removeCard(S.hands[2], c2id); // player2's given card
+  S.hands[1].push(card2);
+  S.hands[2].push(card1);
+  S.receivedCardId[1] = card2.id;
+  S.receivedCardId[2] = card1.id;
+  S.exchangeResult = {p1Gave: card1, p2Gave: card2};
+}
+
+function renderExchangeReveal(){
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  panel.innerHTML = '<h2 class="section-title">交換結果（公開）</h2><p class="lead">両者が選んだカードが同時に公開・交換されました。</p>';
+  const row = document.createElement("div");
+  row.className = "field-row";
+  const item1 = document.createElement("div");
+  item1.className = "field-item";
+  item1.innerHTML = '<div class="cap">'+S.names[1]+' が渡したカード</div>';
+  item1.appendChild(cardEl(S.exchangeResult.p1Gave));
+  const item2 = document.createElement("div");
+  item2.className = "field-item";
+  item2.innerHTML = '<div class="cap">'+S.names[2]+' が渡したカード</div>';
+  item2.appendChild(cardEl(S.exchangeResult.p2Gave));
+  row.appendChild(item1); row.appendChild(item2);
+  panel.appendChild(row);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "捨て札へ進む";
+  btn.addEventListener("click", ()=>{
+    S.phase = "DISCARD";
+    S.pendingPlayer = S.firstPlayer;
+    S.revealed = false;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+/* ============================= 捨て札 ============================= */
+function renderDiscard(){
+  const p = S.pendingPlayer;
+  if(!S.revealed){
+    renderPrivateCover(p, ()=>{ S.revealed = true; render(); }, "元々持っていた5枚の中から1枚を捨てます（受け取ったカードは対象外）。");
+    return;
+  }
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">'+S.names[p]+' — 捨て札を選ぶ</h2><p class="lead">受け取ったカード（枠付き）は捨てられません。元々の5枚から1枚選んでください。</p>';
+
+  const jb = jokerReminderBox(p);
+  if(jb) panel.appendChild(jb);
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  S.hands[p].forEach(c=>{
+    const isReceived = (c.id === S.receivedCardId[p]);
+    const picked = S.discarded[p] === c.id;
+    const el = cardEl(c, {onClick: isReceived ? null : ()=>{ S.discarded[p]=c.id; render(); }, picked});
+    if(isReceived){
+      el.style.opacity = "0.55";
+      el.style.outline = "2px solid var(--accent-2)";
+      el.title = "受け取ったカード（捨てられません）";
+    }
+    hr.appendChild(el);
+  });
+  panel.appendChild(hr);
+  const note = document.createElement("div");
+  note.className = "helpbox";
+  note.textContent = "枠線がついているカードは今回相手から受け取ったカードです。";
+  panel.appendChild(note);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "このカードを捨てる";
+  btn.disabled = !S.discarded[p];
+  btn.addEventListener("click", ()=>{
+    removeCard(S.hands[p], S.discarded[p]);
+    if(p === S.firstPlayer){
+      S.pendingPlayer = other(S.firstPlayer);
+      S.revealed = false;
+    } else {
+      S.phase = "DRAW_CHOICE";
+      S.pendingPlayer = S.firstPlayer;
+      S.revealed = false;
+    }
+    render();
+  });
+  btnrow.appendChild(btn);
+  panel.appendChild(btnrow);
+  app.appendChild(panel);
+}
+
+/* ============================= 1枚引く ============================= */
+function renderDrawChoice(){
+  const p = S.pendingPlayer;
+  if(!S.revealed){
+    renderPrivateCover(p, ()=>{ S.revealed = true; render(); }, "黒・銀・金いずれかの山から1枚引いて手札を6枚に戻します。");
+    return;
+  }
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">'+S.names[p]+' — 山から1枚引く</h2><p class="lead">現在の手札（5枚）です。どの色の山から引くか選んでください。</p>';
+
+  const jb = jokerReminderBox(p);
+  if(jb) panel.appendChild(jb);
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  S.hands[p].forEach(c=> hr.appendChild(cardEl(c, {small:true})));
+  panel.appendChild(hr);
+
+  if(!S.drawnCard[p]){
+    const grid = document.createElement("div");
+    grid.className = "choice-grid";
+    COLORS.forEach(c=>{
+      const b = document.createElement("button");
+      b.textContent = COLOR_LABEL_LONG[c]+"（残り"+S.piles[c].length+"枚）";
+      b.addEventListener("click", ()=>{
+        const drawn = S.piles[c].pop();
+        S.hands[p].push(drawn);
+        S.drawnCard[p] = drawn;
+        S.drawnColor[p] = c;
+        render();
+      });
+      grid.appendChild(b);
+    });
+    panel.appendChild(grid);
+  } else {
+    const info = document.createElement("div");
+    info.className = "notice info";
+    info.appendChild(document.createTextNode(COLOR_LABEL_LONG[S.drawnColor[p]]+"から引きました："));
+    info.appendChild(cardEl(S.drawnCard[p], {small:true}));
+    panel.appendChild(info);
+
+    const btnrow = document.createElement("div");
+    btnrow.className = "btnrow";
+    const btn = document.createElement("button");
+    btn.className = "primary";
+    btn.textContent = "次へ";
+    btn.addEventListener("click", ()=>{
+      if(p === S.firstPlayer){
+        S.pendingPlayer = other(S.firstPlayer);
+        S.revealed = false;
+      } else {
+        S.phase = "JOKER_DECISION";
+        S.pendingPlayer = S.firstPlayer;
+        S.revealed = false;
+      }
+      render();
+    });
+    btnrow.appendChild(btn);
+    panel.appendChild(btnrow);
+  }
+  app.appendChild(panel);
+}
+
+/* ============================= 配置 ============================= */
+function renderPlacement(){
+  const p = S.pendingPlayer;
+  if(!S.revealed){
+    renderPrivateCover(p, ()=>{ S.revealed = true; S.tempSelectedCard = null; render(); }, "手札6枚を黒・銀・金の3つの山に自由に配置します。");
+    return;
+  }
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">'+S.names[p]+' — カードの配置</h2><p class="lead">手札からカードを選び、置きたい山をタップしてください。相手には「何色が何枚あるか」だけが見えます。</p>';
+
+  const jb = jokerReminderBox(p);
+  if(jb) panel.appendChild(jb);
+
+  const placed = new Set();
+  COLORS.forEach(c=> S.bets[p][c].forEach(id=>placed.add(id)));
+  const unplaced = S.hands[p].filter(c=> !placed.has(c.id));
+
+  // 後手（2番目に配置するプレイヤー）には、先手が各山に置いた色の内訳が見える
+  const isSecondPlacer = (p === other(S.firstPlayer));
+
+  const cols = document.createElement("div");
+  cols.className = "pile-cols";
+  COLORS.forEach(c=>{
+    const col = document.createElement("div");
+    const canDrop = !!S.tempSelectedCard;
+    col.className = "pile-col c-"+c + (canDrop ? " target-hint selectable" : "");
+    col.innerHTML = '<h4>'+COLOR_LABEL_LONG[c]+'</h4>';
+
+    const oppInfo = document.createElement("div");
+    oppInfo.className = "opp-info";
+    if(isSecondPlacer){
+      const oc = betColorCounts(S.firstPlayer, c);
+      const total = oc.black+oc.silver+oc.gold;
+      if(total===0){
+        oppInfo.textContent = S.names[S.firstPlayer]+": なし";
+      } else {
+        oppInfo.innerHTML = S.names[S.firstPlayer]+": "+COLORS.filter(cc=>oc[cc]).map(cc=>'<span class="badge">'+COLOR_LABEL[cc]+oc[cc]+'</span>').join("");
+      }
+    }
+    col.appendChild(oppInfo);
+
+    const cardsHere = document.createElement("div");
+    cardsHere.className = "cards-here";
+    S.bets[p][c].forEach(id=>{
+      const card = findCard(S.hands[p], id);
+      cardsHere.appendChild(cardEl(card, {small:true, onClick: (ev)=>{
+        ev.stopPropagation();
+        S.bets[p][c] = S.bets[p][c].filter(x=>x!==id);
+        render();
+      }}));
+    });
+    col.appendChild(cardsHere);
+
+    const dropLabel = document.createElement("div");
+    dropLabel.className = "drop-label";
+    dropLabel.textContent = "タップして置く";
+    col.appendChild(dropLabel);
+
+    if(canDrop){
+      col.addEventListener("click", ()=>{
+        S.bets[p][c].push(S.tempSelectedCard);
+        S.tempSelectedCard = null;
+        render();
+      });
+    }
+    cols.appendChild(col);
+  });
+  panel.appendChild(cols);
+
+  const handWrap = document.createElement("div");
+  handWrap.style.marginTop = "16px";
+  handWrap.innerHTML = '<div class="cap" style="font-size:.78rem;color:var(--ink-dim);margin-bottom:6px;">手札（タップして選び、上の山をタップして置く）</div>';
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  if(unplaced.length===0){
+    const done = document.createElement("div");
+    done.style.color = "var(--ink-dim)";
+    done.style.fontSize = ".82rem";
+    done.textContent = "すべて配置済みです。";
+    hr.appendChild(done);
+  }
+  unplaced.forEach(c=>{
+    const picked = S.tempSelectedCard === c.id;
+    hr.appendChild(cardEl(c, {picked, onClick: ()=>{ S.tempSelectedCard = (picked ? null : c.id); render(); }}));
+  });
+  handWrap.appendChild(hr);
+  panel.appendChild(handWrap);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "配置を確定する";
+  btn.disabled = unplaced.length !== 0;
+  btn.addEventListener("click", ()=>{
+    if(p === S.firstPlayer){
+      S.pendingPlayer = other(S.firstPlayer);
+      S.revealed = false;
+      S.tempSelectedCard = null;
+    } else {
+      S.phase = "PLACEMENT_ANNOUNCE";
+      S.pendingPlayer = null;
+      S.revealed = false;
+    }
+    render();
+  });
+  btnrow.appendChild(btn);
+  panel.appendChild(btnrow);
+  app.appendChild(panel);
+}
+
+function renderPlacementAnnounce(){
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">配置の公開情報</h2><p class="lead">それぞれの山に、何色のカードが何枚置かれたかが公開されます（数字はまだ分かりません）。</p>';
+
+  [1,2].forEach(p=>{
+    const block = document.createElement("div");
+    block.style.marginBottom = "14px";
+    block.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">'+S.names[p]+'</div>';
+    COLORS.forEach(c=>{
+      const counts = {};
+      S.bets[p][c].forEach(id=>{
+        const card = findCard(S.hands[p], id);
+        counts[card.color] = (counts[card.color]||0)+1;
+      });
+      const line = document.createElement("div");
+      line.style.fontSize = ".86rem";
+      line.style.marginBottom = "4px";
+      const parts = Object.keys(counts).length
+        ? COLORS.filter(cc=>counts[cc]).map(cc=> COLOR_LABEL[cc]+counts[cc]+"枚").join("、")
+        : "（0枚）";
+      line.innerHTML = COLOR_LABEL_LONG[c] + "： " + parts;
+      block.appendChild(line);
+    });
+    panel.appendChild(block);
+  });
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "場のカードを公開する";
+  btn.addEventListener("click", ()=>{ S.phase = "FIELD_REVEAL"; render(); });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+/* ============================= 場札公開 ============================= */
+/* ============================= スーパーハード：3・6の相殺・反射 ============================= */
+function initThreeSixPhase(){
+  // このラウンドの全ベットカードについて、実効数字の初期状態を用意
+  S.effectiveCards = {1:{}, 2:{}};
+  [1,2].forEach(p=>{
+    COLORS.forEach(pile=>{
+      S.bets[p][pile].forEach(id=>{
+        const card = findCard(S.hands[p], id);
+        if(card) S.effectiveCards[p][id] = {effectiveNumber: card.number, effectSuppressed: false};
+      });
+    });
+  });
+
+  const countInPile = (p, pile, num)=> S.bets[p][pile].filter(id=>{
+    const c = findCard(S.hands[p], id);
+    return c && c.number === num;
+  }).length;
+
+  const resolution = {};
+  COLORS.forEach(pile=>{
+    const a = countInPile(1,pile,3), b = countInPile(1,pile,6);
+    const c = countInPile(2,pile,3), d = countInPile(2,pile,6);
+    // 3同士・6同士を相殺
+    const a1 = a - Math.min(a,c), c1 = c - Math.min(a,c);
+    const b1 = b - Math.min(b,d), d1 = d - Math.min(b,d);
+    // 残りについて双方向の反射を判定（反射された分は反対側が使う）
+    const p1Usable = (a1 - Math.min(a1,d1)) + Math.min(b1,c1);
+    const p2Usable = (c1 - Math.min(c1,b1)) + Math.min(a1,d1);
+    resolution[pile] = {1:p1Usable, 2:p2Usable};
+  });
+
+  const queue = [];
+  const order = [S.firstPlayer, other(S.firstPlayer)];
+  order.forEach(p=>{
+    COLORS.forEach(pile=>{
+      const n = resolution[pile][p];
+      for(let i=0;i<n;i++) queue.push({player:p, pile});
+    });
+  });
+
+  S.threeSixResolution = resolution;
+  S.threeTargetQueue = queue;
+  S.threeTargetIndex = 0;
+  S.threeTargetSelectedCard = null;
+}
+
+function renderThreeSixResolve(){
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">3・6の相殺・反射</h2><p class="lead">各山で発動する「3」の効果の回数が決まりました（3同士・6同士の相殺、および反射を織り込み済みです）。</p>';
+
+  COLORS.forEach(pile=>{
+    const r = S.threeSixResolution[pile];
+    const line = document.createElement("div");
+    line.style.marginBottom = "8px";
+    line.style.fontSize = ".92rem";
+    line.innerHTML = '<b>'+COLOR_LABEL_LONG[pile]+'</b>： '+S.names[1]+' が使える3の効果 '+r[1]+'回 ／ '+S.names[2]+' が使える3の効果 '+r[2]+'回';
+    panel.appendChild(line);
+  });
+
+  const total = S.threeTargetQueue.length;
+  const note = document.createElement("div");
+  note.className = "notice info";
+  note.style.marginTop = "12px";
+  note.textContent = total>0 ? "続けて、対象を選んでいきます（全"+total+"回）。" : "今回は発動する3の効果がありません。";
+  panel.appendChild(note);
+
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = total>0 ? "対象選択へ進む" : "得点計算へ進む";
+  btn.addEventListener("click", ()=>{
+    S.phase = "THREE_TARGET_SELECT";
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderThreeTargetSelect(){
+  if(S.threeTargetIndex >= S.threeTargetQueue.length){
+    computeScoring();
+    S.phase = "SCORING";
+    render();
+    return;
+  }
+
+  const item = S.threeTargetQueue[S.threeTargetIndex];
+  const actor = item.player;
+  const targetOwner = other(actor);
+  const pile = item.pile;
+
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">'+S.names[actor]+' — 「3」の効果：対象を選ぶ</h2>'+
+    '<p class="lead">'+COLOR_LABEL_LONG[pile]+'にある '+S.names[targetOwner]+' のカードから1枚選んでください（数字を3減らします。6のカードは選べません）。</p>';
+
+  const eligibleIds = S.bets[targetOwner][pile].filter(id=>{
+    const eff = S.effectiveCards[targetOwner][id];
+    return eff && eff.effectiveNumber !== 6;
+  });
+
+  if(eligibleIds.length === 0){
+    const info = document.createElement("div");
+    info.className = "notice info";
+    info.textContent = "対象にできるカードがないため、この効果は不発になります。";
+    panel.appendChild(info);
+    app.appendChild(panel);
+
+    const btnrow0 = document.createElement("div");
+    btnrow0.className = "btnrow";
+    btnrow0.style.justifyContent = "center";
+    const btn0 = document.createElement("button");
+    btn0.className = "primary";
+    btn0.textContent = "次へ";
+    btn0.addEventListener("click", ()=>{ S.threeTargetIndex++; render(); });
+    btnrow0.appendChild(btn0);
+    app.appendChild(btnrow0);
+    return;
+  }
+
+  const hr = document.createElement("div");
+  hr.className = "hand-row";
+  eligibleIds.forEach(id=>{
+    const card = findCard(S.hands[targetOwner], id);
+    const eff = S.effectiveCards[targetOwner][id];
+    const picked = S.threeTargetSelectedCard === id;
+    const displayCard = {id: card.id, color: card.color, number: eff.effectiveNumber};
+    hr.appendChild(cardEl(displayCard, {picked, onClick: ()=>{ S.threeTargetSelectedCard = (picked?null:id); render(); }}));
+  });
+  panel.appendChild(hr);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "この対象に3の効果を使う";
+  btn.disabled = !S.threeTargetSelectedCard;
+  btn.addEventListener("click", ()=>{
+    const id = S.threeTargetSelectedCard;
+    const eff = S.effectiveCards[targetOwner][id];
+    eff.effectiveNumber = Math.max(0, eff.effectiveNumber - 3);
+    eff.effectSuppressed = true;
+    S.threeTargetSelectedCard = null;
+    S.threeTargetIndex++;
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+function renderFieldReveal(){
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">場のカードを公開</h2><p class="lead">各山の場のカードです。この数字を巡って勝負します。</p>';
+  const row = document.createElement("div");
+  row.className = "field-row";
+  COLORS.forEach(c=>{
+    const item = document.createElement("div");
+    item.className = "field-item";
+    item.innerHTML = '<div class="cap">'+COLOR_LABEL_LONG[c]+(c===S.doubleColor?' ✦2倍色':'')+'</div>';
+    item.appendChild(cardEl(S.fieldCards[c]));
+    row.appendChild(item);
+  });
+  panel.appendChild(row);
+  app.appendChild(panel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = (S.difficulty === "super_hard") ? "3・6の相殺を確認する" : "勝敗を計算する";
+  btn.addEventListener("click", ()=>{
+    if(S.difficulty === "super_hard"){
+      initThreeSixPhase();
+      S.phase = "THREE_SIX_RESOLVE";
+    } else {
+      computeScoring();
+      S.phase = "SCORING";
+    }
+    render();
+  });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+/* ============================= 得点計算 ============================= */
+function getEffectiveCardInfo(player, card){
+  if(S.effectiveCards && S.effectiveCards[player] && S.effectiveCards[player][card.id]){
+    return S.effectiveCards[player][card.id];
+  }
+  return {effectiveNumber: card.number, effectSuppressed: false};
+}
+
+function computeCardHomeStrength(card, pileColor, player){
+  // 色当て：カードの色と、賭けている山の色が一致していれば得点2倍（2倍色とは無関係、常時発動）
+  let mult = 1;
+  if(card.color === pileColor) mult *= 2;
+  const eff = getEffectiveCardInfo(player, card);
+  const diff = Math.abs(eff.effectiveNumber - S.fieldCards[pileColor].number);
+  const isMatch = diff === 0;
+  const isSix = (S.difficulty !== "easy") && diff === 6;
+  const isNineEffect = (S.difficulty === "super_hard") && S._pileHasActiveNine && S._pileHasActiveNine[pileColor] && (diff % 3 === 0);
+  const matched = isMatch || isSix || isNineEffect;
+  if(matched) mult *= 3;
+  return {strength: eff.effectiveNumber*mult, mult, isMatch: matched, isSix, colorMatch: (card.color === pileColor)};
+}
+function computeCardAwayStrength(card, pileColor, player){
+  // used only for hard/super_hard-mode "6" broadcast effect: no 色当て bonus for broadcast (non-home) contributions
+  let mult = 1;
+  const eff = getEffectiveCardInfo(player, card);
+  const diff = Math.abs(eff.effectiveNumber - S.fieldCards[pileColor].number);
+  const isMatch = diff === 0;
+  const isSix = diff === 6; // hard/super_hard always include diff6 rule
+  const isNineEffect = (S.difficulty === "super_hard") && S._pileHasActiveNine && S._pileHasActiveNine[pileColor] && (diff % 3 === 0);
+  const matched = isMatch || isSix || isNineEffect;
+  if(matched) mult *= 3;
+  return {strength: eff.effectiveNumber*mult, mult, isMatch: matched, isSix};
+}
+
+function computeScoring(){
+  const detail = {1:{black:[],silver:[],gold:[]}, 2:{black:[],silver:[],gold:[]}};
+  const totals = {1:{black:0,silver:0,gold:0}, 2:{black:0,silver:0,gold:0}};
+
+  // スーパーハードのみ：山ごとに「効果が無効化されていない9」があるか事前集計
+  // 6効果の判定は必ず元のcard.number===6を使う（effectiveNumberが6になっても6効果は得ない）
+  // 9効果の判定は必ず元のcard.number===9 && effectSuppressed===falseを使う
+  if(S.difficulty === "super_hard"){
+    const pileHasActiveNine = {};
+    COLORS.forEach(pile=>{
+      let has = false;
+      [1,2].forEach(p=>{
+        S.bets[p][pile].forEach(id=>{
+          const card = findCard(S.hands[p], id);
+          if(card && card.number === 9){
+            const eff = getEffectiveCardInfo(p, card);
+            if(!eff.effectSuppressed) has = true;
+          }
+        });
+      });
+      pileHasActiveNine[pile] = has;
+    });
+    S._pileHasActiveNine = pileHasActiveNine;
+  } else {
+    S._pileHasActiveNine = null;
+  }
+
+  [1,2].forEach(p=>{
+    COLORS.forEach(pile=>{
+      S.bets[p][pile].forEach(id=>{
+        const card = findCard(S.hands[p], id);
+        const home = computeCardHomeStrength(card, pile, p);
+        totals[p][pile] += home.strength;
+        detail[p][pile].push({card, pile, home, away:null});
+        if((S.difficulty === "hard" || S.difficulty === "super_hard") && card.number === 6){
+          COLORS.filter(x=>x!==pile).forEach(otherPile=>{
+            const away = computeCardAwayStrength(card, otherPile, p);
+            totals[p][otherPile] += away.strength;
+            detail[p][otherPile].push({card, pile: otherPile, home:null, away, broadcastFrom: pile});
+          });
+        }
+      });
+    });
+  });
+
+  const results = {};
+  COLORS.forEach(pile=>{
+    const s1 = totals[1][pile], s2 = totals[2][pile];
+    let winner = null;
+    if(s1 > s2) winner = 1; else if(s2 > s1) winner = 2; else winner = null;
+    let points = 0;
+    if(winner){
+      points = S.fieldCards[pile].number;
+      const doubled1 = (pile === S.doubleColor);
+      if(doubled1) points *= 2;
+      const zeroBonus = (S.difficulty !== "easy") && S.bets[winner][pile].some(id=>{
+        const c = findCard(S.hands[winner], id);
+        return c.number === 0;
+      });
+      if(zeroBonus) points *= 2;
+      results[pile] = {winner, points, s1, s2, doubled: doubled1, zeroBonus};
+    } else {
+      results[pile] = {winner:null, points:0, s1, s2, doubled:(pile===S.doubleColor), zeroBonus:false};
+    }
+  });
+
+  COLORS.forEach(pile=>{
+    if(results[pile].winner) S.scores[results[pile].winner] += results[pile].points;
+  });
+
+  S.lastResult = {detail, totals, results};
+}
+
+function renderScoring(){
+  const r = S.lastResult;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = '<h2 class="section-title">第 '+S.round+' ラウンド結果</h2><p class="lead" style="margin:-4px 0 4px;">色当て：山の色と同じ色のカードは、その山での得点が常に×2になります。2倍色は、その色の山を獲得したときの獲得ポイントを×2にします。</p>';
+
+  COLORS.forEach(pile=>{
+    const box = document.createElement("div");
+    box.className = "pile-result";
+    const res = r.results[pile];
+    let title = COLOR_LABEL_LONG[pile] + '（場：' + S.fieldCards[pile].number + '）';
+    if(pile === S.doubleColor) title += ' <span class="badge gold">2倍色</span>';
+    box.innerHTML = '<h4>'+title+'</h4>';
+
+    const table = document.createElement("table");
+    table.className = "calc";
+    table.innerHTML = '<tr><th>プレイヤー</th><th>カード内訳</th><th>合計得点</th></tr>';
+    [1,2].forEach(p=>{
+      const tr = document.createElement("tr");
+      if(res.winner === p) tr.className = "win-row";
+      const nameTd = document.createElement("td");
+      nameTd.textContent = S.names[p];
+      const cardsTd = document.createElement("td");
+      const items = r.detail[p][pile];
+      if(items.length===0){ cardsTd.textContent = "（なし）"; }
+      items.forEach(it=>{
+        const span = document.createElement("span");
+        span.className = "badge";
+        if(it.home){
+          let txt = COLOR_LABEL[it.card.color]+it.card.number+" → "+it.home.strength;
+          if(it.home.mult>1) txt += "（×"+it.home.mult+"）";
+          span.textContent = txt;
+        } else if(it.away){
+          let txt = "6の効果("+COLOR_LABEL_LONG[it.broadcastFrom]+"より) → "+it.away.strength;
+          if(it.away.mult>1) txt += "（×"+it.away.mult+"）";
+          span.textContent = txt;
+          span.style.borderColor = "#7a6a2e";
+        }
+        cardsTd.appendChild(span);
+      });
+      const totalTd = document.createElement("td");
+      totalTd.textContent = String(res[p===1?"s1":"s2"]);
+      totalTd.style.fontWeight = "700";
+      tr.appendChild(nameTd); tr.appendChild(cardsTd); tr.appendChild(totalTd);
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+
+    const wline = document.createElement("div");
+    wline.className = "winner-line";
+    if(res.winner){
+      let txt = "🏆 "+S.names[res.winner]+" が獲得： "+S.fieldCards[pile].number;
+      if(res.doubled) txt += " ×2（2倍色）";
+      if(res.zeroBonus) txt += " ×2（0の効果）";
+      txt += " = "+res.points+"ポイント";
+      wline.textContent = txt;
+    } else {
+      wline.textContent = "引き分け（この山の獲得なし）";
+    }
+    box.appendChild(wline);
+    panel.appendChild(box);
+  });
+
+  app.appendChild(panel);
+
+  const scorePanel = document.createElement("div");
+  scorePanel.className = "panel center";
+  scorePanel.innerHTML = '<h2 class="section-title">合計得点</h2>'+
+    '<p style="font-size:1.1rem;">'+S.names[1]+'：<b>'+S.scores[1]+'</b>　　'+S.names[2]+'：<b>'+S.scores[2]+'</b></p>';
+  app.appendChild(scorePanel);
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const th = winThreshold();
+  const gameOver = S.scores[1] >= th || S.scores[2] >= th;
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  if(gameOver){
+    btn.textContent = "最終結果を見る";
+    btn.addEventListener("click", ()=>{
+      if(S.scores[1] >= th && S.scores[2] >= th && S.scores[1] === S.scores[2]){
+        // 同点で両者しきい値以上 → 最終ラウンドの先手の勝ち
+        S.winner = S.firstPlayer;
+        S.tieBreakApplied = true;
+      } else if(S.scores[1] >= th && S.scores[2] >= th){
+        S.winner = S.scores[1] > S.scores[2] ? 1 : 2;
+        S.tieBreakApplied = false;
+      } else {
+        S.winner = S.scores[1] >= th ? 1 : 2;
+        S.tieBreakApplied = false;
+      }
+      S.stage = "RESULT";
+      render();
+    });
+  } else {
+    btn.textContent = "次のラウンドへ";
+    btn.addEventListener("click", ()=>{
+      // 2ラウンド目以降：それまでの合計得点が高い方が次の先手。同点ならランダム。
+      if(S.scores[1] > S.scores[2]) S.firstPlayer = 1;
+      else if(S.scores[2] > S.scores[1]) S.firstPlayer = 2;
+      else S.firstPlayer = (Math.random() < 0.5) ? 1 : 2;
+      startRound();
+    });
+  }
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+}
+
+/* ============================= 結果画面 ============================= */
+function renderResult(){
+  const panel = document.createElement("div");
+  panel.className = "panel center";
+  const headline = S.names[S.winner] + " の勝利！";
+  panel.innerHTML = '<h2 class="section-title" style="font-size:1.5rem;">'+headline+'</h2>'+
+    '<p style="font-size:1.1rem;margin:10px 0 20px;">最終得点　'+S.names[1]+'：<b>'+S.scores[1]+'</b>　　'+S.names[2]+'：<b>'+S.scores[2]+'</b></p>';
+  app.appendChild(panel);
+
+  if(S.tieBreakApplied){
+    const note = document.createElement("div");
+    note.className = "notice info";
+    note.style.maxWidth = "520px";
+    note.style.margin = "-10px auto 16px";
+    note.textContent = "同点で両者が規定点に到達したため、最終ラウンドで先手だった "+S.names[S.winner]+" の勝利となりました。";
+    app.appendChild(note);
+  }
+
+  const btnrow = document.createElement("div");
+  btnrow.className = "btnrow";
+  btnrow.style.justifyContent = "center";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "もう一度遊ぶ";
+  btn.addEventListener("click", ()=>{ S = freshState(); render(); });
+  btnrow.appendChild(btn);
+  app.appendChild(btnrow);
+
+  const foot = document.createElement("div");
+  foot.className = "footer-note";
+  foot.textContent = "三色ゲーム — 2人用ローカル対戦カードゲーム";
+  app.appendChild(foot);
+}
+
+/* ============================= 起動 ============================= */
+S = freshState();
+render();
+
+})();
+</script>
+<script type="module" src="online-supabase.js"></script>
+</body>
+</html>
